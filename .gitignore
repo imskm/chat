@@ -1,5 +1,8 @@
 client
 server
+*.o
+filter
+new
 
 .*
 !.gitignore
