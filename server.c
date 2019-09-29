@@ -77,7 +77,7 @@ int main(int argc, char *argv[])
 				/* If client terminated then clean client details */
 				puts("handle_client_request called..");
 				if (server_handle_request(&clients, i) == 0) {
-					printf("[*] Client <%s> terminated...\n", tmp->username);
+					printf("[*] Client <%s> terminated...\n", tmp->nick);
 					FD_CLR(tmp->fd, &allset);
 					close(tmp->fd);
 					server_del_client(&clients, i);
@@ -180,7 +180,7 @@ int server_send_available(struct clients *clients, int index)
 				|| tmp->is_assoc)
 			continue;
 
-		sprintf(username, "[*] <%s>\n", clients->clients[i]->username);
+		sprintf(username, "[*] <%s>\n", clients->clients[i]->nick);
 		strcat(buf, username);
 	}
 
@@ -210,7 +210,7 @@ int server_new_client(struct clients *clients, int sockfd)
 	/* Set default values */
 	client->fd 					= sockfd;
 	client->pair_fd 			= -1;
-	client->username[0] 		= 0;
+	client->nick[0] 		= 0;
 	client->is_username_set 	= false;
 	client->is_assoc 			= false;
 
@@ -239,7 +239,7 @@ bool server_validate_username(struct clients *clients, int index)
 	bool ret = false;
 	char *username;
 
-	username = clients->clients[index]->username;
+	username = clients->clients[index]->nick;
 
 	/* Username validation */
 	if ((len = strlen(username)) > CLIENT_USERNAME_MAX_LEN) {
@@ -263,8 +263,8 @@ bool server_validate_username(struct clients *clients, int index)
 	for (int i = 0; i < clients->clients_i; i++) {
 		if (i == index || clients->clients[i] == NULL)
 			continue;
-		if (strcmp(clients->clients[i]->username,
-					clients->clients[index]->username) == 0) {
+		if (strcmp(clients->clients[i]->nick,
+					clients->clients[index]->nick) == 0) {
 			goto out;
 		}
 	}
@@ -283,12 +283,12 @@ int server_handle_username(struct clients *clients, int index, char *buf)
 
 	client = clients->clients[index];
 
-	strncpy(client->username, buf + REQUEST_TEXT_LEN, CLIENT_USERNAME_MAX_LEN);
-	client->username[CLIENT_USERNAME_MAX_LEN] = 0;
+	strncpy(client->nick, buf + REQUEST_TEXT_LEN, CLIENT_USERNAME_MAX_LEN);
+	client->nick[CLIENT_USERNAME_MAX_LEN] = 0;
 
 	if (server_validate_username(clients, index) == false) {
 		fprintf(stderr, "[*] Username validation failed\n");
-		client->username[0] = 0;
+		client->nick[0] = 0;
 		/* Tell the client */
 		if (write(client->fd,
 					RESPONSE_USERN_ERR, sizeof(RESPONSE_USERN_ERR) - 1) < 0) {
@@ -322,7 +322,7 @@ int	server_handle_assoc(struct clients *clients, int index, char *buf)
 	username_assoc[CLIENT_USERNAME_MAX_LEN] = 0;
 
 	/* If username_assoc is the same as client username then reject */
-	if (strcmp(client->username, username_assoc) == 0) {
+	if (strcmp(client->nick, username_assoc) == 0) {
 		nbytes = sprintf(res_buf, "%s[!] You can not assocciate with yourself",
 				RESPONSE_RESER);
 		write(client->fd, res_buf, nbytes);
@@ -335,7 +335,7 @@ int	server_handle_assoc(struct clients *clients, int index, char *buf)
 		if (tmp == NULL || client->fd == tmp->fd)
 			continue;
 
-		if (strncmp(tmp->username, username_assoc,
+		if (strncmp(tmp->nick, username_assoc,
 					CLIENT_USERNAME_MAX_LEN) == 0) {
 			nbytes = sprintf(res_buf, "%s[*] You are now assocciated with <%s>",
 					RESPONSE_RESOK, username_assoc);
@@ -346,7 +346,7 @@ int	server_handle_assoc(struct clients *clients, int index, char *buf)
 				break;
 			}
 			nbytes = sprintf(res_buf, "%s[*] You are now assocciated with <%s>",
-					RESPONSE_RESOK, client->username);
+					RESPONSE_RESOK, client->nick);
 			/* Tell the assocciated partner that he/she is assocciated
 			 * with requested client */
 			if ((nbytes = write(tmp->fd, res_buf, nbytes)) == -1) {

@@ -572,12 +572,9 @@ other replies will be implemented in future, I don't need it for now
 ```
 User command
 ```
-/join <nick>					; user can only be associated one user or channel at any given time
-								; join command is used to connect to user and channel. If parameter
-								; starts with '#' (hash) then client want to connect to channel else
-								; user
+/part <receiver>				; disassociate from given receiver (nick or channel)
 ```
-* Quit user
+## Quit user
    Command: QUIT
 Parameters: [<Quit message>]
 A client session is ended with a quit message.

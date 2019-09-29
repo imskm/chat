@@ -2,6 +2,9 @@
 #define __CHAT_H
 
 #include <stdbool.h>
+#include "request.h"
+#include "command.h"
+#include "str.h"
 
 #define PEER_TERMINATED 0x10
 
@@ -42,14 +45,16 @@
 #define CLIENT_CMD_TEXT_QUIT "QUIT"
 #define CLIENT_CMD_TEXT_LEN   4
 
-#define CLIENT_USERNAME_MAX_LEN 8
+#define CLIENT_USERNAME_MAX_LEN 9
+#define COMMAND_MSG_BUF_MAX_LEN 512
 
 struct client {
 	int fd;
 	int pair_fd;
 	/* nclient = number of clients in clients array, only to
 	 * check connected client limit */
-	unsigned char username[CLIENT_USERNAME_MAX_LEN + 1];
+	unsigned char nick[CLIENT_USERNAME_MAX_LEN + 1];
+	unsigned char pair[CLIENT_USERNAME_MAX_LEN + 1];
 	bool is_username_set;
 	bool is_assoc;
 };
@@ -84,5 +89,27 @@ int		client_request_assoc(struct client *client, char *errors,
 		const char *username);
 int 	client_get_command_type(const char *cmd);
 int		client_send_message(struct client *client, const char *msg);
+
+//#include "codes.h"
+//const struct {
+//	int   code;
+//	char *name;
+//	char *desc;
+//	int  (*callback)(struct request *, const char *); /* last arg is buf */
+//} reply_codes = {
+//};
+
+/**
+ *  From the client side sequence of function call is as:
+ *   1. chat_command_handle() is called from main
+ *   2. chat_request_prepare() is called from chat_command_handle()
+ *      i.  chat_command_parse() is called
+ *      ii. chat_request_prepare_CMD() is called (CMD is specific command)
+ *   3. chat_reuqest_send() is called from chat_command_handle()
+ */
+int		chat_command_handle(struct client *client);
+int		chat_request_prepare(struct request *req, const char *cmd_buf);
+int		chat_request_send(struct client *client, struct request *req);
+
 
 #endif

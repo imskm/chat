@@ -1,17 +1,18 @@
 #include <libsocket.h>
 #include <errno.h>
 #include <regex.h>
+#include <stdbool.h>
 
 #include "chat.h"
+#include "command.h"
 #include "str.h"
-#include "easyio.h"
 
+bool is_quit = false;
 
 int main(int argc, char *argv[])
 {
 	int sockfd;
 	struct sockaddr_in serveraddr;
-	String username;
 	unsigned char buf[BUFFSIZE] = {0};
 	int username_len, ret;
 	struct client client = {0};
@@ -34,46 +35,10 @@ int main(int argc, char *argv[])
 	/* Setup client */
 	client.fd 					= sockfd;
 	client.pair_fd 				= -1;
-	client.username[0] 			= 0;
 	client.is_username_set 		= false;
 	client.is_assoc 			= false;
-
-	/* Prompt for user name */
-	for (; ;) {
-		printf("Username(6 char max): ");
-		GetString(&username, stdin);
-
-		if (client_validate_username(username, errors) == false) {
-			puts(errors);
-			continue;
-		}
-		username_len = strlen(username);
-		puts(username);
-
-
-		puts("Checking username...");
-		if ((ret = client_username_check(sockfd, username)) == 1) {
-			fprintf(stderr, "Success: Username <%s> accepted\n", username);
-			break;
-		} else if (ret == -1) {
-			fprintf(stderr, "[*] Username <%s> already exist, try another username\n", username);
-		} else {
-			fprintf(stderr, "Unable to check username <%s>\n", username);
-			exit(1);
-		}
-	}
-	strcpy(client.username, username);
-
-	puts("[*] Fetching list of available users...");
-	/* Show available online users */
-	if (client_get_online_users(&client, buf, sizeof(buf)) == -1) {
-		fprintf(stderr, "Failed to get available users, aborting..\n");
-		goto out;
-	}
-
-	fprintf(stderr, "[*] Available online users ->\n");
-	puts(buf);
-	fprintf(stderr, "\n\n");
+	client.pair[0]				= 0;
+	strcpy(client.nick, "?????????");
 
 	/* Use I/O Multiplexing*/
 	FD_ZERO(&allset);
@@ -81,7 +46,7 @@ int main(int argc, char *argv[])
 	FD_SET(client.fd, &allset);
 	maxfd = max(client.fd, fileno(stdin)) + 1;
 	for (; ;) {
-		fprintf(stderr, "[%s] ", client.username);
+		fprintf(stderr, "[%s] ", client.nick);
 		rset = allset;
 		nready = select(maxfd, &rset, NULL, NULL, NULL);
 
@@ -95,9 +60,9 @@ int main(int argc, char *argv[])
 				continue;
 		}
 
-		/* If stdin is ready then process it */
+		/* If stdin is ready then process it (user command) */
 		if (FD_ISSET(fileno(stdin), &rset)) {
-			client_handle_command(&client);
+			chat_command_handle(&client);
 		}
 	}
 
@@ -269,79 +234,6 @@ int	client_handle_response(struct client *client)
 	return 1;
 }
 
-int client_handle_command(struct client *client)
-{
-	int command_type;
-	String command;
-	char errors[BUFFSIZE];
-
-	/* If input is empty then return (it's ok to give empty line) */
-	if (GetString(&command, stdin) == 0) {
-		return 0;
-	}
-
-	/* Trim leading and trailing white space */
-	str_trim(command);
-
-	command_type = client_get_command_type(command);
-	switch(command_type) {
-
-	case CLIENT_CMD_CODE_CHAT :
-	{
-		char username[CLIENT_USERNAME_MAX_LEN];
-		char *cmd_usernameptr;
-
-		/* +2 is for space and leading '/'  */
-		cmd_usernameptr = command + CLIENT_CMD_TEXT_LEN + 2;
-		
-		if (!client_validate_username(cmd_usernameptr, errors)) {
-			puts(errors);
-			return -1;
-		}
-		if (client_request_assoc(client, errors, cmd_usernameptr) == -1) {
-			if (errors[0] != 0)
-				puts(errors);
-			return -1;
-		}
-	}
-	break;
-
-	case CLIENT_CMD_CODE_MESG :
-	{
-		if (client_send_message(client, command) == -1)
-			return -1;
-	}
-	break;
-
-	case CLIENT_CMD_CODE_DISC :
-	{
-		puts("detected client_cmd_code_disc");
-		//
-	}
-	break;
-
-	case CLIENT_CMD_CODE_QUIT :
-	{
-		puts("detected client_cmd_code_quit");
-		//
-	}
-	break;
-
-	case CLIENT_CMD_CODE_UKNW :
-	{
-		puts("detected client_cmd_code_uknw");
-		//
-	}
-	break;
-		
-	default :
-		//
-		break;
-	}
-
-	return 0;
-}
-
 int	client_get_command_type(const char *cmd)
 {
 	int len, cmd_code;
@@ -404,3 +296,4 @@ int	client_send_message(struct client *client, const char *msg)
 
 	return 0;
 }
+
