@@ -28,7 +28,7 @@ int chat_command_handle(struct client *client)
 		req.dest = client->pair;
 
 	/* 2. Prepare the request struct */
-	if (chat_request_prepare(&req, cmd_buf) == -1)
+	if (chat_command_prepare(&req, cmd_buf) == -1)
 		return -1;
 
 	/* 3. Send the request to server */
@@ -44,7 +44,7 @@ cleanup:
 	return ret;
 }
 
-int	chat_request_prepare(struct request *req, const char *cmd_buf)
+int	chat_command_prepare(struct request *req, const char *cmd_buf)
 {
 	int cmd_index;
 	const struct command *cmd;
@@ -124,4 +124,12 @@ static int prepare_request_for_message(struct request *req,
 	req->irc_cmd = commands[command_message_get_index()].irc_cmd;
 	req->body = strdup(cmd_bufp);
 	return 0;
+}
+
+
+
+/* Server functions */
+
+int chat_request_handle(struct clients *clients, int index)
+{
 }

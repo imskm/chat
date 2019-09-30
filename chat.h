@@ -102,14 +102,15 @@ int		client_send_message(struct client *client, const char *msg);
 /**
  *  From the client side sequence of function call is as:
  *   1. chat_command_handle() is called from main
- *   2. chat_request_prepare() is called from chat_command_handle()
+ *   2. chat_command_prepare() is called from chat_command_handle()
  *      i.  chat_command_parse() is called
- *      ii. chat_request_prepare_CMD() is called (CMD is specific command)
+ *      ii. chat_command_prepare_CMD() is called (CMD is specific command)
  *   3. chat_reuqest_send() is called from chat_command_handle()
  */
 int		chat_command_handle(struct client *client);
-int		chat_request_prepare(struct request *req, const char *cmd_buf);
+int		chat_command_prepare(struct request *req, const char *cmd_buf);
 int		chat_request_send(struct client *client, struct request *req);
 
+int 	chat_request_handle(struct clients *clients, int index)
 
 #endif
