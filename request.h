@@ -5,9 +5,9 @@
 
 struct request {
 	int   type;
-	char *src;    		/* nick of source  */
-	char *dest;    		/* nick of destination  */
-	char *cmd;    		/* name of command (client side command) */
+	const char *src;   	/* nick of source  */
+	const char *dest;  	/* nick of destination  */
+	const char *cmd;   	/* name of command (client side command) */
 	const char *irc_cmd;/* name of command (IRC protocol command) */
 	/* parameters of command message (NULL terminated) */
 	char *params[REQUEST_MAX_PARAMS];
