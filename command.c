@@ -62,26 +62,29 @@ int command_handle(const char **cmd_buf)
 int	command_handle_join(struct request *req, const char *cmd_buf)
 {
 	int argc, ret;
-	char *cmd_cp, *cmd_cpp;
-
-	ret = 0;
+	char *cmd_cp, *cmd_cpp, *parts[2];
 
 	if ((cmd_cp = strdup(cmd_buf)) == NULL) {
 		fprintf(stderr, "[!] command error\n");
 		return -1;
 	}
 
+	ret = 0;
+
 	str_ltrim(cmd_cp);
 	cmd_cpp = cmd_cp; /* need to free it after sending request */
 
 	/* 2= 0 param and 1 NULL */
-	if ((argc = extract_fill_params(&cmd_cpp, req->params, 2)) != 1) {
-		fprintf(stderr,
-				"[!] number of argument missmatch, required %d given %d\n",
-				1, argc);
+	if ((argc = extract_fill_params(&cmd_cpp, parts, 2)) != 1) {
+		fprintf(stderr, "[!] Invalid argument, /%s <channel|nick>\n", req->cmd);
 		ret = -1;
+		goto cleanup;
 	}
+	request_param_set(req, parts[0]);
+
+cleanup:
 	free(cmd_cp);
+	if (parts[0]) free(parts[0]);
 
 	return ret;
 }
