@@ -131,7 +131,36 @@ int	command_handle_msg(struct request *req, const char *cmd_buf)
 
 int	command_handle_names(struct request *req, const char *cmd_buf)
 {
-	puts("command_names");
+	int argc;
+	char *cmd_cp, *cmd_cpp, *parts[3], buf[BUFFSIZE]; 
+	
+	if ((cmd_cp = strdup(cmd_buf)) == NULL) {
+		fprintf(stderr, "[!] command error\n");
+		return -1;
+	}
+
+	str_ltrim(cmd_cp);
+	cmd_cpp = cmd_cp; /* need to free it after sending request */
+	buf[0] = 0;
+
+	/* /names command's number of arg can be 0 or at max 2 */
+	argc = extract_fill_params(&cmd_cpp, parts, 3);
+	for (int i = 0; i < argc; i++) {
+		if (i == 0)
+			sprintf(buf, "%s", parts[i]);
+		else
+			sprintf(buf, "%s,%s", buf, parts[i]);
+
+		free(parts[i]);
+	}
+
+	/* TODO If cmd_cpp points to some char other that NUL terminator in other
+	 * words if more than max number of params is given then print notice to
+	 * user that max params for names can be given */
+
+	req->params[0] = strdup(buf);
+	req->params[1] = NULL;
+	free(cmd_cp);
 
 	return 0;
 }
