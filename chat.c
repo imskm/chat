@@ -66,16 +66,13 @@ int	chat_request_prepare(struct request *req, const char *cmd_buf)
 	cmd 			= &commands[cmd_index];
 	req->cmd 		= cmd->cmd;
 	req->irc_cmd 	= cmd->irc_cmd;
-	fprintf(stderr, "[*] Command found: %s\n", cmd->cmd);
 
 	/* 2. Since each command has its own unique structure and number of
 	 *    required parameters therefor each command should be handled
 	 *    by seperate function of its own and this function should populate
 	 *    the request struct accordingly */
-	if (cmd->handle(req, cmd_bufp) == -1) {
-		fprintf(stderr, "[!] Invalid argument for command: %s\n", cmd->cmd);
+	if (cmd->handle(req, cmd_bufp) == -1)
 		return -1;
-	}
 
 	return 0;
 }
