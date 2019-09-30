@@ -1,7 +1,7 @@
 #ifndef __REQUEST_H
 #define __REQUEST_H
 
-#define REQUEST_MAX_PARAMS 8
+#define REQUEST_MAX_PARAMS 9 /* 8 +1 is for NULL terminated */
 
 struct request {
 	int   type;
