@@ -167,7 +167,27 @@ int	command_handle_names(struct request *req, const char *cmd_buf)
 
 int	command_handle_nick(struct request *req, const char *cmd_buf)
 {
-	puts("command_nick");
+	int argc;
+	char *cmd_cp, *cmd_cpp, *parts[2];
+	
+	if ((cmd_cp = strdup(cmd_buf)) == NULL) {
+		fprintf(stderr, "[!] command error\n");
+		return -1;
+	}
+
+	str_ltrim(cmd_cp);
+	cmd_cpp = cmd_cp; /* need to free it after sending request */
+
+	/* /nick command's number of arg is 1 */
+	if ((argc = extract_fill_params(&cmd_cpp, parts, 2)) != 1) {
+		fprintf(stderr, "[!] Invalid # of args, /%s <nick>\n", req->cmd);
+		free(cmd_cp);
+		return -1;
+	}
+
+	req->params[0] = strdup(parts[0]);
+	req->params[1] = NULL;
+	free(cmd_cp);
 
 	return 0;
 }
