@@ -61,15 +61,13 @@ int command_handle(const char **cmd_buf)
 
 int	command_handle_join(struct request *req, const char *cmd_buf)
 {
-	int argc, ret;
-	char *cmd_cp, *cmd_cpp, *parts[2];
+	int argc, ret = 0;
+	char *cmd_cp, *cmd_cpp, *parts[2] = {0};
 
 	if ((cmd_cp = strdup(cmd_buf)) == NULL) {
 		fprintf(stderr, "[!] command error\n");
 		return -1;
 	}
-
-	ret = 0;
 
 	str_ltrim(cmd_cp);
 	cmd_cpp = cmd_cp; /* need to free it after sending request */
@@ -91,9 +89,8 @@ cleanup:
 
 int	command_handle_msg(struct request *req, const char *cmd_buf)
 {
-	int argc;
-	char *cmd_cp, *cmd_cpp;
-	char *parts[2];
+	int 		argc, ret = 0;
+	char 		*cmd_cp, *cmd_cpp, *parts[2] = {0};
 
 	if ((cmd_cp = strdup(cmd_buf)) == NULL) {
 		fprintf(stderr, "[!] command error\n");
@@ -106,36 +103,35 @@ int	command_handle_msg(struct request *req, const char *cmd_buf)
 	/* Store receiver in params */
 	if ((argc = extract_fill_params(&cmd_cpp, parts, 2)) != 1) {
 		fprintf(stderr,
-				"[!] invalid %s command, /%s <receiver> <message>\n",
+				"[!] Invalid %s command, /%s <receiver> <message>\n",
 				req->cmd, req->cmd);
-		free(parts[0]);
-		free(cmd_cp);
-		return -1;
+		ret = -1;
+		goto cleanup;
 	}
-
-	req->dest = parts[0]; /* Set the receiver */
 
 	/* If cmd_cpp is NULL then no message was given, return error */
 	if (cmd_cpp == NULL) {
 		fprintf(stderr,
 				"[!] No message given, /%s <receiver> <message>\n",
 				req->cmd);
-		free(cmd_cp);
-		free(parts[0]);
-		return -1;
+		ret = -1;
+		goto cleanup;
 	}
 
-	req->body = strdup(cmd_cpp); /* Setting message as body in req */
+	request_dest_set(req, parts[0]); /* Set the receiver */
+	request_body_set(req, cmd_cpp); /* Setting message as body in req */
 
+cleanup:
 	free(cmd_cp);
+	if (parts[0]) free(parts[0]);
 
-	return 0;
+	return ret;
 }
 
 int	command_handle_names(struct request *req, const char *cmd_buf)
 {
-	int argc;
-	char *cmd_cp, *cmd_cpp, *parts[3], buf[BUFFSIZE]; 
+	int argc, ret = 0;
+	char *cmd_cp, *cmd_cpp, *parts[3] = {0}, buf[BUFFSIZE]; 
 	
 	if ((cmd_cp = strdup(cmd_buf)) == NULL) {
 		fprintf(stderr, "[!] command error\n");
@@ -161,17 +157,18 @@ int	command_handle_names(struct request *req, const char *cmd_buf)
 	 * words if more than max number of params is given then print notice to
 	 * user that max params for names can be given */
 
-	req->params[0] = strdup(buf);
-	req->params[1] = NULL;
+	request_param_set(req, buf);
+
+cleanup:
 	free(cmd_cp);
 
-	return 0;
+	return ret;
 }
 
 int	command_handle_nick(struct request *req, const char *cmd_buf)
 {
-	int argc;
-	char *cmd_cp, *cmd_cpp, *parts[2];
+	int argc, ret = 0;
+	char *cmd_cp, *cmd_cpp, *parts[2] = {0};
 	
 	if ((cmd_cp = strdup(cmd_buf)) == NULL) {
 		fprintf(stderr, "[!] command error\n");
@@ -184,20 +181,23 @@ int	command_handle_nick(struct request *req, const char *cmd_buf)
 	/* /nick command's number of arg is 1 */
 	if ((argc = extract_fill_params(&cmd_cpp, parts, 2)) != 1) {
 		fprintf(stderr, "[!] Invalid # of args, /%s <nick>\n", req->cmd);
-		free(cmd_cp);
-		return -1;
+		ret = -1;
+		goto cleanup;
 	}
 
-	req->params[0] = strdup(parts[0]);
-	req->params[1] = NULL;
-	free(cmd_cp);
+	request_param_set(req, parts[0]);
 
-	return 0;
+cleanup:
+	free(cmd_cp);
+	if (parts[0]) free(parts[0]);
+
+	return ret;
 }
 
 int	command_handle_quit(struct request *req, const char *cmd_buf)
 {
 	char *cmd_cp;
+	int ret = 0;
 	
 	if ((cmd_cp = strdup(cmd_buf)) == NULL) {
 		fprintf(stderr, "[!] command error\n");
@@ -206,13 +206,13 @@ int	command_handle_quit(struct request *req, const char *cmd_buf)
 
 	str_ltrim(cmd_cp);
 
-	if (cmd_cp[0]) {
-		req->body = strdup(cmd_cp);
-		req->params[0] = NULL;
-	}
+	if (cmd_cp[0])
+		request_body_set(req, cmd_cp);
+
+cleanup:
 	free(cmd_cp);
 
-	return 0;
+	return ret;
 }
 
 static int find_message_cmd_index()
