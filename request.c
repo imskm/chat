@@ -6,7 +6,8 @@ int request_param_set(struct request *req, char *param)
 {
 	for (int i = 0; i < REQUEST_MAX_PARAMS; i++) {
 		if (req->params[i] == NULL) {
-			req->params[i] = param;
+			req->params[i]     = strdup(param);
+			req->params[i + 1] = NULL;
 			return 0;
 		}
 	}
