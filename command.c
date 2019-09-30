@@ -194,7 +194,20 @@ int	command_handle_nick(struct request *req, const char *cmd_buf)
 
 int	command_handle_quit(struct request *req, const char *cmd_buf)
 {
-	puts("command_quit");
+	char *cmd_cp;
+	
+	if ((cmd_cp = strdup(cmd_buf)) == NULL) {
+		fprintf(stderr, "[!] command error\n");
+		return -1;
+	}
+
+	str_ltrim(cmd_cp);
+
+	if (cmd_cp[0]) {
+		req->body = strdup(cmd_cp);
+		req->params[0] = NULL;
+	}
+	free(cmd_cp);
 
 	return 0;
 }
