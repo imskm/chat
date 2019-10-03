@@ -5,6 +5,7 @@ struct command {
 	const char *cmd;
 	const char *irc_cmd;
 	int  (*handle)(struct request *, const char *); /* last arg is buf */
+	int  (*request)(struct request *, struct collection *);
 };
 
 extern const struct command commands[];
@@ -20,7 +21,6 @@ int		command_handle(const char **cmd_buf);
  * commands struct variable above */
 int		command_handle_join(struct request *req, const char *cmd_buf);
 int		command_handle_msg(struct request *req, const char *cmd_buf);
-int		command_handle_names(struct request *req, const char *cmd_buf);
 int		command_handle_names(struct request *req, const char *cmd_buf);
 int		command_handle_nick(struct request *req, const char *cmd_buf);
 int		command_handle_quit(struct request *req, const char *cmd_buf);
