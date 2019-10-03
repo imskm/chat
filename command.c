@@ -10,12 +10,12 @@
 #include "command.h"
 
 const struct command commands[] = {
-	{"join",    "JOIN",     command_handle_join},
-	{"msg",     "PRIVMSG",  command_handle_msg},
-	{"names",   "NAMES",    command_handle_names},
-	{"nick",    "NICK",     command_handle_nick},
-	{"quit",    "QUIT",     command_handle_quit},
-	{NULL,      NULL,       NULL},
+	{"join",    "JOIN",     command_handle_join,    request_handle_join},
+	{"msg",     "PRIVMSG",  command_handle_msg,     request_handle_msg},
+	{"names",   "NAMES",    command_handle_names,   request_handle_names},
+	{"nick",    "NICK",     command_handle_nick,    request_handle_nick},
+	{"quit",    "QUIT",     command_handle_quit,    request_handle_quit},
+	{NULL,		NULL,      	NULL,       			NULL},
 };
 
 static int find_message_cmd_index();
