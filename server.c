@@ -10,6 +10,9 @@ int main(int argc, char *argv[])
 	socklen_t clientlen;
 	fd_set rset, allset;
 	struct clients clients = {0};
+	struct collection collection = {0};
+
+	collection.clients = &clients;
 
 	listenfd = Socket(AF_INET, SOCK_STREAM, 0);
 
@@ -76,19 +79,12 @@ int main(int argc, char *argv[])
 			if (FD_ISSET(tmp->fd, &rset)) {
 				/* If client terminated then clean client details */
 				puts("handle_client_request called..");
-				if (server_handle_request(&clients, i) == 0) {
-					printf("[*] Client <%s> terminated...\n", tmp->nick);
-					FD_CLR(tmp->fd, &allset);
-					close(tmp->fd);
-					server_del_client(&clients, i);
-				}
+				collection.index = i;
+				chat_request_handle(&collection);
 				nready--;
 			}
 		}
-
-
 	}
-
 }
 
 int server_handle_request(struct clients *clients, int index)
