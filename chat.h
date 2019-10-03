@@ -2,8 +2,6 @@
 #define __CHAT_H
 
 #include <stdbool.h>
-#include "request.h"
-#include "command.h"
 #include "str.h"
 
 #define PEER_TERMINATED 0x10
@@ -65,6 +63,18 @@ struct clients {
 	size_t clients_i;
 };
 
+/* This struct will be used to pass all data to different functions
+ * as the number of arguments is large and some function requires all
+ * of these data to perform required action */
+struct collection {
+	struct clients *clients;
+	size_t index;
+	const char *buf;
+};
+
+#include "request.h"
+#include "command.h"
+
 //static char errors[BUFFSIZE];
 
 int 	server_handle_request(struct clients *clients, int index);
@@ -111,6 +121,21 @@ int		chat_command_handle(struct client *client);
 int		chat_command_prepare(struct request *req, const char *cmd_buf);
 int		chat_request_send(struct client *client, struct request *req);
 
-int 	chat_request_handle(struct clients *clients, int index)
+int 	chat_request_handle(struct collection *collection);
+int 	chat_request_prepare(struct request *req,
+		struct collection *collection);
+int 	chat_response_prepare(struct request *req, struct clients *clients,
+		size_t index);
+
+int 	chat_client_session_open(struct clients *clients,
+		struct client *client);
+int 	chat_client_session_close(struct clients *clients, int index);
+
+/* Including Errors Code will be used for Error replies */
+#include "chat_errors.h"
+#include "chat_replies.h"
+
+bool 	chat_validate_nick(const char *nick);
+int		chat_find_nick(struct clients *clients, const char *nick);
 
 #endif
