@@ -173,7 +173,8 @@ int chat_request_handle(struct collection *collection)
 	 *    with error response function group */
 	if (chat_request_prepare(&req, collection) == -1) {
 		/* Send error reply to request sender */
-		//int err_i = chat_calc_reply_index(req->status);
+		int err_i = chat_calc_reply_index(req->status);
+		responses[i].handle(req, collection);
 		return -1;
 	}
 
@@ -280,4 +281,12 @@ int chat_find_nick(struct clients *clients, const char *nick)
 			return i;
 
 	return -1;
+}
+
+int chat_calc_reply_index(int status)
+{
+	if (status < IRC_MIN_REPLY_CODE || status > IRC_MAX_REPLY_CODE)
+		return -1;
+
+	return status - IRC_MIN_REPLY_CODE;
 }
