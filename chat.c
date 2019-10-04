@@ -173,8 +173,8 @@ int chat_request_handle(struct collection *collection)
 	 *    with error response function group */
 	if (chat_request_prepare(&req, collection) == -1) {
 		/* Send error reply to request sender */
-		int err_i = chat_calc_reply_index(req->status);
-		responses[i].handle(req, collection);
+		int err_i = chat_calc_reply_index(req.status);
+		responses[err_i].handle(&req, collection);
 		return -1;
 	}
 
