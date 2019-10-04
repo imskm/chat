@@ -46,6 +46,9 @@
 #define CLIENT_USERNAME_MAX_LEN 9
 #define COMMAND_MSG_BUF_MAX_LEN 512
 
+#define IRC_MIN_REPLY_CODE 200
+#define IRC_MAX_REPLY_CODE 502
+
 struct client {
 	int fd;
 	int pair_fd;
@@ -74,6 +77,7 @@ struct collection {
 
 #include "request.h"
 #include "command.h"
+#include "response.h"
 
 //static char errors[BUFFSIZE];
 
@@ -138,4 +142,5 @@ int 	chat_client_session_close(struct clients *clients, int index);
 bool 	chat_validate_nick(const char *nick);
 int		chat_find_nick(struct clients *clients, const char *nick);
 
+int 	chat_calc_reply_index(int status);
 #endif
