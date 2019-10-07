@@ -1,8 +1,7 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <regex.h>
 #include <string.h>
-
-#include <libsocket.h>
 
 #include "easyio.h"
 #include "chat.h"
@@ -10,6 +9,7 @@
 static int prepare_request_for_message(struct request *req,
 		const char *cmd_bufp);
 static bool chat_is_request_msg(struct request *req);
+static int chat_get_request_type(int status);
 
 
 int chat_command_handle(struct client *client)
@@ -140,7 +140,7 @@ int chat_request_handle(struct collection *collection)
 	struct clients *clients;
 	struct client *client;
 	ssize_t nbytes;
-	struct request req;
+	struct request req = {0};
 	size_t index;
 
 	/* Set up client(s) varible to access it easily */
@@ -164,6 +164,14 @@ int chat_request_handle(struct collection *collection)
 	}
 	buf[nbytes] = 0;
 
+	/* If client doesn't have a nick then don't allow to perform any action */
+	fprintf(stderr, "nick %s\n", client->nick);
+	if (!client->nick[0]) {
+		sprintf(buf, "%d :You don't have a nick yet.", RPL_NONE);
+		response_send(client->fd, buf, strlen(buf));
+		return -1;
+	}
+
 	str_trim(buf);
 	/* Set the source of request (client struct pointer) */
 	req.src = client;
@@ -180,8 +188,14 @@ int chat_request_handle(struct collection *collection)
 
 
 	/* 3. Response send */
-	/* TODO Handle 3 types of responses (RPL, ERR, sending message to
-	 * other user (chatting) */
+	/* If request is for sending message then call message sending function*/
+	if (chat_get_request_type(req.status) == REQTYPE_RPL) {
+		int index = chat_calc_reply_index(req.status);
+		return responses[index].handle(&req, collection);
+	}
+
+	/* Send message */
+	response_send_msg(&req, collection);
 
 	return 0;
 }
@@ -196,7 +210,7 @@ int chat_request_prepare(struct request *req, struct collection *collection)
 
 	/* 1.1. Handle first phase of the request command message */
 	if ((cmd_index = request_handle(req, collection)) == -1) {
-		req->status = ERR_UNKNOWNCOMMAND;
+		req->status = ERR_UNKNOWNCOMMAND; /* only error request_handle check */
 		fprintf(stderr, "[!] Unknown command: %s\n", cmd_bufp);
 		return -1;
 	}
@@ -289,4 +303,33 @@ int chat_calc_reply_index(int status)
 		return -1;
 
 	return status - IRC_MIN_REPLY_CODE;
+}
+
+static int chat_get_request_type(int status)
+{
+	if (status >= 400)
+		return REQTYPE_ERR;
+
+	if (status >= 200 && status <= 399)
+		return REQTYPE_RPL;
+
+	return REQTYPE_MSG;
+}
+
+int chat_response_handle(struct client *client)
+{
+	unsigned char buf[BUFFSIZE];
+	int nbytes;
+
+	if ((nbytes = read(client->fd, buf, sizeof(buf) - 1)) == 0) {
+		return PEER_TERMINATED;
+	} else if (nbytes == -1) {
+		perror("[!] chat_response_handle: read error");
+		return -1;
+	}
+	buf[nbytes] = 0;
+
+	puts(buf);
+
+	return 0;
 }
