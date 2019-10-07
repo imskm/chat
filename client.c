@@ -52,7 +52,7 @@ int main(int argc, char *argv[])
 
 		/* If socket is ready for read then read */
 		if (FD_ISSET(client.fd, &rset)) {
-			if (client_handle_response(&client) == PEER_TERMINATED) {
+			if (chat_response_handle(&client) == PEER_TERMINATED) {
 				fprintf(stderr, "[!] server terminated prematurely\n");
 				goto out;
 			}
