@@ -165,7 +165,6 @@ int chat_request_handle(struct collection *collection)
 	buf[nbytes] = 0;
 
 	/* If client doesn't have a nick then don't allow to perform any action */
-	fprintf(stderr, "nick %s\n", client->nick);
 	if (!client->nick[0]) {
 		sprintf(buf, "%d :You don't have a nick yet.", RPL_NONE);
 		response_send(client->fd, buf, strlen(buf));
