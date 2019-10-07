@@ -2,7 +2,8 @@
 #define __CHAT_H
 
 #include <stdbool.h>
-#include "str.h"
+#include <libsocket.h>
+#include <str.h>
 
 #define PEER_TERMINATED 0x10
 
@@ -48,6 +49,10 @@
 
 #define IRC_MIN_REPLY_CODE 200
 #define IRC_MAX_REPLY_CODE 502
+
+#define REQTYPE_MSG 1
+#define REQTYPE_ERR 2
+#define REQTYPE_RPL 2
 
 struct client {
 	int fd;
@@ -124,6 +129,7 @@ int		client_send_message(struct client *client, const char *msg);
 int		chat_command_handle(struct client *client);
 int		chat_command_prepare(struct request *req, const char *cmd_buf);
 int		chat_request_send(struct client *client, struct request *req);
+int chat_response_handle(struct client *client);
 
 int 	chat_request_handle(struct collection *collection);
 int 	chat_request_prepare(struct request *req,
