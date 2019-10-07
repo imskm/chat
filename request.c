@@ -101,6 +101,7 @@ int request_handle_join(struct request *req, struct collection *collection)
 		req->status = ERR_NEEDMOREPARAMS;
 		goto cleanup;
 	}
+	request_dest_set(req, parts[2]);
 
 	/* TODO this function must only deal with channel joining and not user
 	 * joining with other user. But for now I am implementing user chatting */
