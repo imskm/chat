@@ -130,16 +130,53 @@ int request_handle_msg(struct request *req, struct collection *collection)
 
 int request_handle_names(struct request *req, struct collection *collection)
 {
-	puts("request_handle_names");
+	/* request for NAMES doesn't need any operation here */
+	req->status = RPL_NAMREPLY;
 
 	return 0;
 }
 
 int request_handle_nick(struct request *req, struct collection *collection)
 {
-	puts("request_handle_nick");
+	int n, ret = 0;
+	char *parts[4] = {0}, *p;
 
-	return 0;
+	p = strdup(collection->buf);
+
+	/* If argument for JOIN command is not given then return error */
+	if ((n = str_split(p, " ", parts, 4)) != 3) {
+		req->status = ERR_NONICKNAMEGIVEN;
+		ret = -1;
+		goto cleanup;
+	}
+	request_dest_set(req, parts[2]);
+
+	/* If given nick fails in validation then return error */
+	if (chat_validate_nick(parts[2]) == false) {
+		req->status = ERR_ERRONEUSNICKNAME;
+		ret = -1;
+		goto cleanup;
+	}
+
+	/* If provided new nick exist then return error */
+	if (chat_find_nick(collection->clients, parts[2]) != -1) {
+		req->status = ERR_NICKNAMEINUSE;
+		ret = -1;
+		goto cleanup;
+	}
+
+	/* Since all the check passed therefore nick is assigned to this client */
+	strcpy(collection->clients->clients[collection->index]->nick, parts[2]);
+
+	request_dest_set(req, parts[2]);
+	req->status = RPL_NONE;
+	req->body = strdup("Nick has been changed successfully!");
+	/* TODO Notify to other users about nick change */
+
+cleanup:
+	free(p);
+
+	return ret;
 }
 
 int request_handle_quit(struct request *req, struct collection *collection)
