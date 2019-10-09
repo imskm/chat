@@ -165,11 +165,13 @@ int chat_request_handle(struct collection *collection)
 	buf[nbytes] = 0;
 
 	/* If client doesn't have a nick then don't allow to perform any action */
+	/*
 	if (!client->nick[0]) {
 		sprintf(buf, "%d :You don't have a nick yet.", RPL_NONE);
 		response_send(client->fd, buf, strlen(buf));
 		return -1;
 	}
+	*/
 
 	str_trim(buf);
 	/* Set the source of request (client struct pointer) */
@@ -184,7 +186,6 @@ int chat_request_handle(struct collection *collection)
 		responses[err_i].handle(&req, collection);
 		return -1;
 	}
-
 
 	/* 3. Response send */
 	/* If request is for sending message then call message sending function*/
@@ -290,7 +291,7 @@ out:
 int chat_find_nick(struct clients *clients, const char *nick)
 {
 	for (int i = 0; i < clients->clients_i; i++)
-		if (strcmp(clients->clients[i]->nick, nick) == 0)
+		if (clients->clients[i] && strcmp(clients->clients[i]->nick, nick) == 0)
 			return i;
 
 	return -1;
@@ -331,4 +332,24 @@ int chat_response_handle(struct client *client)
 	puts(buf);
 
 	return 0;
+}
+
+char *chat_serialize_nick(struct clients *clients, char *buf, size_t size)
+{
+	char *p;
+	buf[0] = 0;
+
+	p = buf;
+	for (int i = 0; i < clients->clients_i; i++) {
+		int j = 0;
+		while (*p = clients->clients[i]->nick[j++]) p++;
+
+		if (size - (p - buf) < CLIENT_USERNAME_MAX_LEN + 1)
+			return buf;
+		*p = ' ';
+		p++;
+	}
+	*p = 0;
+
+	return buf;
 }
