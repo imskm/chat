@@ -99,7 +99,7 @@ const struct response responses[] = {
 	{297, NULL, NULL}, /* unsupported */
 	{298, NULL, NULL}, /* unsupported */
 	{299, NULL, NULL}, /* unsupported */
-	{300, NULL, NULL},
+	{300, NULL,                                         response_send_rpl_none},
 	{301, NULL, NULL}, /* unsupported */
 	{302, NULL, NULL},
 	{303, NULL, NULL},
@@ -152,7 +152,7 @@ const struct response responses[] = {
 	{350, NULL, NULL}, /* unsupported */
 	{351, NULL, NULL},
 	{352, NULL, NULL},
-	{353, NULL, NULL}, /* unsupported */
+	{353, NULL,                                        response_send_rpl_names},
 	{354, NULL, NULL}, /* unsupported */
 	{355, NULL, NULL}, /* unsupported */
 	{356, NULL, NULL}, /* unsupported */
@@ -230,12 +230,12 @@ const struct response responses[] = {
 	{428, NULL, NULL}, /* unsupported */
 	{429, NULL, NULL}, /* unsupported */
 	{430, NULL, NULL}, /* unsupported */
-	{431, NULL, NULL},
-	{432, NULL, NULL},
-	{433, NULL, NULL},
+	{431, ":No nickname given",                              response_send_err},
+	{432, "<nick> :Erroneus nickname",                       response_send_err},
+	{433, "<nick> :Nickname is already in use",              response_send_err},
 	{434, NULL, NULL}, /* unsupported */
 	{435, NULL, NULL}, /* unsupported */
-	{436, NULL, NULL},
+	{436, "<nick> :Nickname collision KILL",                 response_send_err},
 	{437, NULL, NULL}, /* unsupported */
 	{438, NULL, NULL}, /* unsupported */
 	{439, NULL, NULL}, /* unsupported */
