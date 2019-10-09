@@ -390,6 +390,13 @@ Note: :<prefix> is required in case of server communicating with other server an
 * Server sends fatal error if an invalid command is sent by client
 
 
+16. Implement `nick` command 					-- done
+17. Implement `names` command					-- done
+18. Implement `join` command					-- done
+19. Implement `msg` command						-- done
+20. Implement `quit` command
+
+
 # Message commands for all requests
 * Set nick name
 * Show all online nick names including the client him self
