@@ -123,9 +123,31 @@ cleanup:
 
 int request_handle_msg(struct request *req, struct collection *collection)
 {
-	puts("request_handle_msg");
+	int ret;
+	char *parts[4], *p, *q;
 
-	return 0;
+	p = strdup(collection->buf);
+
+	ret = -1;
+	if (str_split(p, " ", parts, 4) != 3) {
+		req->status = ERR_NORECIPIENT;
+		goto cleanup;
+	}
+
+	/* If empty message is given the return error and set status */
+	if ((q = strchr(collection->buf + 1, ':')) == NULL) {
+		req->status = ERR_NEEDMOREPARAMS; /* Should be Message body empty */
+		goto cleanup;
+	}
+	ret = 0;
+	req->status = 0; /* Message status code */
+	request_dest_set(req, parts[2]);
+	request_body_set(req, q + 1);
+
+cleanup:
+	free(p);
+
+	return ret;
 }
 
 int request_handle_names(struct request *req, struct collection *collection)

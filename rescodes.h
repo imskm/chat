@@ -210,7 +210,7 @@ const struct response responses[] = {
 	{408, NULL, NULL}, /* unsupported */
 	{409, NULL, NULL},
 	{410, NULL, NULL}, /* unsupported */
-	{411, NULL, NULL},
+	{411, ":No recipient given (<command>)",                 response_send_err},
 	{412, NULL, NULL},
 	{413, NULL, NULL},
 	{414, NULL, NULL},

@@ -75,8 +75,38 @@ void prepare_error_message(struct request *req, const struct response *res,
 
 int response_send_msg(struct request *req, struct collection *col)
 {
+	int i;
+	struct client *client;
+	struct client *recipient;
+	unsigned char buf[BUFFSIZE];
 
-	return 0;
+	client = col->clients->clients[col->index];
+
+	/* 1. Check valid nick given for recipient */
+	if (chat_validate_nick(req->dest) == false) {
+		req->status = ERR_ERRONEUSNICKNAME;
+		return response_send_err(req, col);
+	}
+
+	/* 2. Check if the message is for associated user, if so then send msg */
+	if (client->is_assoc && strcmp(client->partner->nick, req->dest) == 0) {
+		recipient = client->partner;
+
+	/* 3. Find recipient */
+	} else if ((i = chat_find_nick(col->clients, req->dest)) != -1) {
+		recipient = col->clients->clients[i];
+
+	/* Else recipient not found */
+	} else {
+		req->status = ERR_NOSUCHNICK;
+		return response_send_err(req, col);
+	}
+
+	/* 4. Send the message to recipient */
+	sprintf(buf, ":%s %s %s :%s", req->src->nick, req->irc_cmd, req->dest,
+			req->body);
+
+	return response_send(recipient->fd, buf, strlen(buf));
 }
 
 int response_send_rpl_none(struct request *req, struct collection *col)
@@ -110,6 +140,7 @@ int response_send_rpl_join(struct request *req, struct collection *col)
 
 	col->clients->clients[col->index]->partner = col->clients->clients[i];
 	col->clients->clients[i]->partner = col->clients->clients[col->index];
+	col->clients->clients[col->index]->is_assoc = true;
 
 	/* Notify the connected client */
 	sprintf(buf, "%d :<%s> has requested association", RPL_NONE,
