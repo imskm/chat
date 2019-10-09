@@ -57,6 +57,7 @@
 struct client {
 	int fd;
 	int pair_fd;
+	struct client *partner;
 	/* nclient = number of clients in clients array, only to
 	 * check connected client limit */
 	unsigned char nick[CLIENT_USERNAME_MAX_LEN + 1];
@@ -147,6 +148,7 @@ int 	chat_client_session_close(struct clients *clients, int index);
 
 bool 	chat_validate_nick(const char *nick);
 int		chat_find_nick(struct clients *clients, const char *nick);
+char	*chat_serialize_nick(struct clients *clients, char *buf, size_t size);
 
 int 	chat_calc_reply_index(int status);
 #endif
