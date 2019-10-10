@@ -132,7 +132,7 @@ int		chat_command_prepare(struct request *req, const char *cmd_buf);
 int		chat_request_send(struct client *client, struct request *req);
 int chat_response_handle(struct client *client);
 
-int 	chat_request_handle(struct collection *collection);
+int 	chat_request_handle(struct collection *collection, fd_set *set);
 int 	chat_request_prepare(struct request *req,
 		struct collection *collection);
 int 	chat_response_prepare(struct request *req, struct clients *clients,

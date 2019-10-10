@@ -134,7 +134,7 @@ static int prepare_request_for_message(struct request *req,
 
 /* Server functions */
 
-int chat_request_handle(struct collection *collection)
+int chat_request_handle(struct collection *collection, fd_set *set)
 {
 	char buf[BUFFSIZE];
 	struct clients *clients;
@@ -151,11 +151,12 @@ int chat_request_handle(struct collection *collection)
 	/* 1. Read the input and If FIN received then return */
 	if ((nbytes = read(client->fd, buf, sizeof(buf) - 1)) == 0) {
 		if (clients->clients[index]->nick[0])
-			fprintf(stderr, "[*] Client <%s> terminated.\n",
-					client->nick);
+			fprintf(stderr, "[*] Client <%s> terminated.\n", client->nick);
 		else
-			fprintf(stderr, "[*] Client [%d] terminated.\n",
-					client->fd);
+			fprintf(stderr, "[*] Client [%d] terminated.\n", client->fd);
+
+		/* Clear fd from read set */
+		FD_CLR(client->fd, set);
 
 		return chat_client_session_close(clients, index);
 	} else if (nbytes == -1) { /* Else handle error */

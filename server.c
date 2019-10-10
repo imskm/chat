@@ -80,7 +80,7 @@ int main(int argc, char *argv[])
 				/* If client terminated then clean client details */
 				puts("handle_client_request called..");
 				collection.index = i;
-				chat_request_handle(&collection);
+				chat_request_handle(&collection, &allset);
 				nready--;
 			}
 		}
