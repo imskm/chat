@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <regex.h>
 #include <string.h>
+#include <ctype.h>
 
 #include "easyio.h"
 #include "chat.h"
@@ -319,18 +320,50 @@ static int chat_get_request_type(int status)
 
 int chat_response_handle(struct client *client)
 {
-	unsigned char buf[BUFFSIZE];
-	int nbytes;
+	unsigned char buf[BUFFSIZE], *p;
+	ssize_t nbytes;
+	struct request req = {0};
 
+	/* 1. Read the socket and If FIN received then return */
 	if ((nbytes = read(client->fd, buf, sizeof(buf) - 1)) == 0) {
 		return PEER_TERMINATED;
-	} else if (nbytes == -1) {
-		perror("[!] chat_response_handle: read error");
+	} else if (nbytes == -1) { /* Else handle error */
+		perror("read error");
 		return -1;
 	}
 	buf[nbytes] = 0;
 
-	puts(buf);
+	str_trim(buf);
+
+	/* 2. Prepare the request structure. If response is numeric reply then
+	 *    handle it here */
+	/*
+	:irc.example.com 001 borja :Welcome to the Internet Relay Network
+		borja!borja@polaris.cs.uchicago.edu
+	:irc.example.com 433 * borja :Nickname is already in use.
+	:irc.example.org 332 borja #cmsc23300 :A channel for CMSC 23300 students
+	:amy!amy@foo.example.com PRIVMSG rory :message here
+	*/
+
+	/* Parsing server response message */
+	if (chat_message_parse(buf, &req) == -1) {
+		fprintf(stderr, "[!] chat_response_handle: parse error: %s\n", buf);
+		return -1;
+	}
+
+	fprintf(stderr, "dest: %s\n", req.dest);
+	fprintf(stderr, "irc_cmd: %s\n", req.irc_cmd);
+	for (int i = 0; req.params[i]; i++)
+		fprintf(stderr, "param[%d]: %s\n", i + 1, req.params[i]);
+	fprintf(stderr, "body: %s\n", req.body);
+	fprintf(stderr, "status: %d\n", req.status);
+	fprintf(stderr, "Original: %s\n", buf);
+
+	/* If response message is a message of user then handle it */
+	if (req.status == 0) { /* 0 = status code for message */
+		return chat_render_line(&req, req.body);
+	}
+
 
 	return 0;
 }
@@ -353,4 +386,93 @@ char *chat_serialize_nick(struct clients *clients, char *buf, size_t size)
 	*p = 0;
 
 	return buf;
+}
+
+int chat_message_parse(unsigned char *msg, struct request *req)
+{
+	unsigned char parts[512], *p, *prevp;
+
+	prevp = p = msg;
+	if (*prevp != ':')
+		return -1;
+
+	/* 1. Extract <origin> */
+	if ((p = strchr(prevp, ' ')) == NULL)
+		return -1;
+	/* TODO there is no member in req to store origin. Figure out this */
+	prevp = p++;
+	while (isspace(*prevp)) prevp++; /* Skip white spaces */
+
+	/* 2. Extract Command */
+	if ((p = strchr(prevp, ' ')) == NULL)
+		return -1;
+
+	strncpy(parts, prevp, p - prevp);
+	parts[p - prevp] = 0;
+	if (isinteger(parts)) {
+		req->status = atoi(parts);
+		req->status = req->status >= 0 ? req->status : -req->status;
+	} else {
+		req->irc_cmd = strdup(parts);
+	}
+	prevp = p++;
+	while (isspace(*prevp)) prevp++; /* Skip white spaces */
+
+	/* IF reached at the end of the message then exit */
+	if (*prevp == '\r' && *(prevp + 1) == '\n')
+		return 0;
+
+	/* 3. Extract param -> a: first param is nick (receiver) */
+	if ((p = strchr(prevp, ' ')) == NULL)
+		return -1;
+	strncpy(parts, prevp, p - prevp);
+	parts[p - prevp] = 0;
+	request_param_set(req, parts);
+	prevp = p++;
+	while (isspace(*prevp)) prevp++; /* Skip white spaces */
+
+	/* IF reached at the end of the message then exit */
+	if (*prevp == '\r' && *(prevp + 1) == '\n')
+		return 0;
+
+	/* 4. Extract next param -> b: can be client's message or server's
+	 *    reply message */
+	while (*prevp) {
+		if (*prevp == ':') {
+			request_body_set(req, prevp + 1);
+			return 0;
+		}
+
+		/* Since next param is not message prefixed with ':' extract next
+		 * param */
+		if ((p = strchr(prevp, ' ')) == NULL) {
+			request_param_set(req, prevp);
+			return -1;
+		}
+		strncpy(parts, prevp, p - prevp);
+		parts[p - prevp] = 0;
+		request_param_set(req, parts);
+		prevp = p++;
+		while (isspace(*prevp)) prevp++; /* Skip white spaces */
+	}
+
+	return 0;
+}
+
+bool isinteger(unsigned char *str)
+{
+	str_trim(str);
+	if (str[0] == '-' || str[1] == '+')
+		str++;
+
+	for (int i = 0; str[i]; i++) {
+		if (!isdigit(str[i]))
+			return false;
+	}
+
+	return true;
+}
+
+int chat_render_line(struct request *req, const char *buf)
+{
 }

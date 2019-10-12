@@ -150,5 +150,9 @@ bool 	chat_validate_nick(const char *nick);
 int		chat_find_nick(struct clients *clients, const char *nick);
 char	*chat_serialize_nick(struct clients *clients, char *buf, size_t size);
 
+int 	chat_render_line(struct request *req, const char *buf);
 int 	chat_calc_reply_index(int status);
+int		chat_message_parse(unsigned char *msg, struct request *req);
+bool	isinteger(unsigned char *str);
+
 #endif
