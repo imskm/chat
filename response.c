@@ -19,9 +19,20 @@ static void prepare_error_message(struct request *req,
 
 int response_send(int sockfd, const char *buf, size_t size)
 {
-	if (write(sockfd, buf, size) == -1)
-		return -1;
+	char msg_buf[BUFFSIZE];
+	int nbytes;
+
+	if (buf[0] != ':') {
+		nbytes = sprintf(msg_buf, "%s%s", ":server ", buf);
+	} else {
+		if (write(sockfd, buf, size) == -1)
+			return -1;
+		return 0;
+	}
 	
+	if (write(sockfd, msg_buf, nbytes) == -1)
+		return -1;
+
 	return 0;
 }
 
@@ -35,9 +46,10 @@ int response_send_err(struct request *req, struct collection *col)
 
 	prepare_error_message(req, res, col);
 
-	nbytes = sprintf(buf, "%d %s", req->status, req->body);
+	nbytes = sprintf(buf, ":server %d %s %s", req->status, req->src->nick,
+			req->body);
 
-	return response_send(req->src->fd, buf, nbytes);
+	return response_send(req->src->fd, buf, strlen(buf));
 }
 
 void prepare_error_message(struct request *req, const struct response *res,
@@ -117,9 +129,9 @@ int response_send_rpl_none(struct request *req, struct collection *col)
 	if (!req->body)
 		req->body = strdup("Action performed");
 
-	nbytes = sprintf(buf, "%d :%s", req->status, req->body);
+	nbytes = sprintf(buf, "%d %s :%s", req->status, req->src->nick, req->body);
 
-	return response_send(req->src->fd, buf, nbytes);
+	return response_send(req->src->fd, buf, strlen(buf));
 }
 
 int response_send_rpl_join(struct request *req, struct collection *col)
@@ -134,7 +146,8 @@ int response_send_rpl_join(struct request *req, struct collection *col)
 		req->status = ERR_NOSUCHNICK;
 		return response_send_err(req, col);
 	} else if (i == col->index) {
-		sprintf(buf, "%d :You can't associate your self", RPL_NONE);
+		sprintf(buf, "%d %s :You can't associate your self", RPL_NONE,
+				req->src->nick);
 		return response_send(req->src->fd, buf, strlen(buf));
 	}
 
@@ -143,12 +156,13 @@ int response_send_rpl_join(struct request *req, struct collection *col)
 	col->clients->clients[col->index]->is_assoc = true;
 
 	/* Notify the connected client */
-	sprintf(buf, "%d :<%s> has requested association", RPL_NONE,
-			req->src->nick);
+	sprintf(buf, "%d %s :<%s> has requested association", RPL_NONE,
+			req->src->nick, req->src->nick);
 	response_send(col->clients->clients[col->index]->partner->fd, buf,
 			strlen(buf));
 
-	sprintf(buf, "%d :You have joined successfully!", RPL_NONE);
+	sprintf(buf, "%d %s :You have joined successfully!", RPL_NONE,
+			req->src->nick);
 
 	return response_send(req->src->fd, buf, strlen(buf));
 }
@@ -157,13 +171,14 @@ int response_send_rpl_names(struct request *req, struct collection *col)
 {
 	char buf[BUFFSIZE];
 
-	sprintf(buf, "%d ", RPL_NAMREPLY);
-	chat_serialize_nick(col->clients, buf + 4, sizeof(buf) - 4);
+	sprintf(buf, "%d %s :", RPL_NAMREPLY, req->src->nick);
+	chat_serialize_nick(col->clients, buf + strlen(buf), sizeof(buf)
+			- strlen(buf));
 
 	/* TODO Handle the case when buf is full but more nick is remaining */
 
 	response_send(req->src->fd, buf, strlen(buf));
-	sprintf(buf, "%d", RPL_ENDOFNAMES);
+	sprintf(buf, "%d %s", RPL_ENDOFNAMES, req->src->nick);
 
 	return response_send(req->src->fd, buf, strlen(buf));
 }
