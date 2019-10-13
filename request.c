@@ -53,6 +53,7 @@ int request_dest_set(struct request *req, const char *dest)
 int request_cleanup(struct request *req)
 {
 	if (req->dest) free((void *)req->dest);
+	if (req->orig) free((void *)req->orig);
 	/* req->nick should not be freed */
 	for (int i = 0; req->params[i] && i < REQUEST_MAX_PARAMS; i++) {
 		free(req->params[i]);
@@ -61,6 +62,7 @@ int request_cleanup(struct request *req)
 	if (req->body) free(req->body);
 
 	req->dest = NULL;
+	req->orig = NULL;
 	req->body = NULL;
 
 	return 0;
