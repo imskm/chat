@@ -3,6 +3,7 @@
 #include <regex.h>
 #include <string.h>
 #include <ctype.h>
+#include <time.h>
 
 #include "easyio.h"
 #include "chat.h"
@@ -351,6 +352,7 @@ int chat_response_handle(struct client *client)
 		return -1;
 	}
 
+	/*
 	fprintf(stderr, "dest: %s\n", req.dest);
 	fprintf(stderr, "irc_cmd: %s\n", req.irc_cmd);
 	for (int i = 0; req.params[i]; i++)
@@ -358,14 +360,11 @@ int chat_response_handle(struct client *client)
 	fprintf(stderr, "body: %s\n", req.body);
 	fprintf(stderr, "status: %d\n", req.status);
 	fprintf(stderr, "Original: %s\n", buf);
+	*/
+	fprintf(stdout, "\n");
 
 	/* If response message is a message of user then handle it */
-	if (req.status == 0) { /* 0 = status code for message */
-		return chat_render_line(&req, req.body);
-	}
-
-
-	return 0;
+	return chat_render_line(&req, req.body);
 }
 
 char *chat_serialize_nick(struct clients *clients, char *buf, size_t size)
@@ -399,7 +398,11 @@ int chat_message_parse(unsigned char *msg, struct request *req)
 	/* 1. Extract <origin> */
 	if ((p = strchr(prevp, ' ')) == NULL)
 		return -1;
-	/* TODO there is no member in req to store origin. Figure out this */
+
+	strncpy(parts, ++prevp, p - prevp);
+	parts[p - prevp] = 0;
+	request_orig_set(req, parts);
+
 	prevp = p++;
 	while (isspace(*prevp)) prevp++; /* Skip white spaces */
 
@@ -475,4 +478,36 @@ bool isinteger(unsigned char *str)
 
 int chat_render_line(struct request *req, const char *buf)
 {
+	const int win_width = 80, win_height = 25;
+	unsigned char line[BUFFSIZE], part[128];
+	struct tm *tm;
+	time_t t;
+
+	t = time(NULL);
+	tm = localtime(&t);
+	//fprintf(stderr, "%0d:%0d:%0d\n", tm->tm_hour, tm->tm_min, tm->tm_sec);
+	sprintf(line, "%02d:%02d:%02d", tm->tm_hour, tm->tm_min, tm->tm_sec);
+	if (req->status == 0) {
+		sprintf(part, "\033[1m%13s \033[32m|\033[0m ", req->orig);
+		strcat(line, part);
+	} else {
+		sprintf(part, "\033[1m%13s \033[32m|\033[0m ", " ");
+		strcat(line, part);
+	}
+
+	if (req->status >= 400) 
+		strcat(line, "\033[31m");
+	else if (req->status >= 300) 
+		strcat(line, "\033[33m");
+
+	if (req->status >= 300 && req->body) {
+		strcat(line, req->body);
+		strcat(line, "\033[0m");
+	} else if (req->body) {
+		strcat(line, req->body);
+	}
+
+	fprintf(stdout, "%s\n", line);
+
+	return 0;
 }
