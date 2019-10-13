@@ -6,6 +6,7 @@
 struct request {
 	int   type;
 	struct client *src; /* source (from which client request came) */
+	const char *orig;  	/* nick of origin (from where request came) */
 	const char *dest;  	/* nick of destination */
 	const char *cmd;   	/* name of command (client side command) */
 	const char *irc_cmd;/* name of command (IRC protocol command) */
@@ -21,6 +22,7 @@ int request_param_get(struct request *req, int index);
 int request_cleanup(struct request *req);
 
 int request_body_set(struct request *req, char *body);
+int request_orig_set(struct request *req, const char *orig);
 int request_dest_set(struct request *req, const char *dest);
 
 int request_handle(struct request *req, struct collection *collection);

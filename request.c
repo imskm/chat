@@ -32,6 +32,15 @@ int request_body_set(struct request *req, char *body)
 	return 0;
 }
 
+int request_orig_set(struct request *req, const char *orig)
+{
+	if (orig == NULL)
+		return -1;
+	req->orig = strdup(orig);
+
+	return 0;
+}
+
 int request_dest_set(struct request *req, const char *dest)
 {
 	if (dest == NULL)
