@@ -1,7 +1,7 @@
 CC=gcc
 LIBSPATH=~/Dropbox/Developments/c_devl/clib/objs
 CFLAGS=-I ~/Dropbox/Developments/c_devl/clib/headers/
-LIBS=$(LIBSPATH)/libsocket.o $(LIBSPATH)/str.o chat.o command.o request.o response.o
+LIBS=$(LIBSPATH)/libsocket.o $(LIBSPATH)/str.o chat.o command.o request.o response.o $(LIBSPATH)/cursor.o
 CFLAGS+=-g
 
 server: server.c
