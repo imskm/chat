@@ -1,13 +1,27 @@
-#include <libsocket.h>
 #include <errno.h>
 #include <regex.h>
 #include <stdbool.h>
+#include <termios.h>
+#include <time.h>
+
+#include <libsocket.h>
+#include <cursor.h>
 
 #include "chat.h"
 #include "command.h"
 #include "str.h"
 
+struct text_view {
+	size_t index;
+	unsigned char buf[BUFFSIZE];
+};
+
+int cui_textview(struct text_view *textv);
+void client_render_cmdline(char *status_line, char *prompt, char *typed_cmd);
+char *client_construct_info_line(const char *info, char *out_line);
+
 bool is_quit = false;
+
 
 int main(int argc, char *argv[])
 {
@@ -17,6 +31,10 @@ int main(int argc, char *argv[])
 	int username_len, ret;
 	struct client client = {0};
 	char errors[BUFFSIZE] = {0};
+	struct termios term_orig, term;
+	struct text_view text_view = {0};
+
+	char status_line[256], prompt[256]; 
 
 	int maxfd, nready;
 	fd_set rset, allset;
@@ -40,20 +58,32 @@ int main(int argc, char *argv[])
 	client.pair[0]				= 0;
 	strcpy(client.nick, "?????????");
 
+	/* Setup terminal ios */
+	if (tcgetattr(STDIN_FILENO, &term_orig) == -1) {
+		perror("tcgetattr error");
+		exit(1);
+	}
+	term = term_orig;
+	term.c_lflag &= ~(ICANON | ECHO);
+	tcsetattr(STDIN_FILENO, TCSANOW, &term);
+	cur_tobottom();
+	cur_toleft();
+
 	/* Use I/O Multiplexing*/
 	FD_ZERO(&allset);
 	FD_SET(fileno(stdin), &allset);
 	FD_SET(client.fd, &allset);
 	maxfd = max(client.fd, fileno(stdin)) + 1;
 	for (; ;) {
-		fprintf(stderr, "[%s] ", client.nick);
+		sprintf(prompt, "[%s]", client.nick);
+		client_render_cmdline(status_line, prompt, text_view.buf);
 		rset = allset;
 		nready = select(maxfd, &rset, NULL, NULL, NULL);
 
 		/* If socket is ready for read then read */
 		if (FD_ISSET(client.fd, &rset)) {
 			if (chat_response_handle(&client) == PEER_TERMINATED) {
-				fprintf(stderr, "[!] server terminated prematurely\n");
+				client_info_printline("Server terminated prematurely");
 				goto out;
 			}
 			if (--nready == 0)
@@ -62,13 +92,18 @@ int main(int argc, char *argv[])
 
 		/* If stdin is ready then process it (user command) */
 		if (FD_ISSET(fileno(stdin), &rset)) {
-			chat_command_handle(&client);
+			if (cui_textview(&text_view) == '\n' && text_view.index != 0) {
+				chat_command_handle(&client, text_view.buf);
+				text_view.index = 0;
+				text_view.buf[0] = 0;
+			}
 		}
 	}
 
 out:
-	puts("[*] Closing connection..");
+	client_info_printline("Closing connection...");
 	close(sockfd);
+	tcsetattr(STDIN_FILENO, TCSANOW, &term_orig);
 
 	return 0;
 }
@@ -297,3 +332,67 @@ int	client_send_message(struct client *client, const char *msg)
 	return 0;
 }
 
+int cui_textview(struct text_view *textv)
+{
+	int ch;
+
+	/* TODO Handle Escape control characters */
+	if ((ch = getchar()) == '\n' && textv->index == 0)
+		return ch;
+	else if (ch == 127 && textv->index == 0)
+		return ch;
+
+	switch (ch) {
+		case 127: textv->index--; break;
+		case '\n': break;
+		default  : textv->buf[textv->index++] = ch; break;
+	}
+
+	textv->buf[textv->index] = 0;
+
+	return ch;
+}
+
+void client_render_cmdline(char *status_line, char *prompt, char *typed_cmd)
+{
+	const int width = 80;
+
+	cur_up(1);
+	cur_toleft();
+	fprintf(stdout, "\033[37;104m%-*s\033[0m\n", width, "[STATUS LINE]");
+	fprintf(stdout, "\033[0K%s %s", prompt, typed_cmd);
+	fflush(stdout);
+}
+
+void client_print_line(const char *line)
+{
+	cur_up(1);
+	cur_toleft();
+	fprintf(stdout, "\033[0K"); /* Clear line */
+	cur_toleft();
+	fprintf(stdout, "%s\n\n", line);
+}
+
+char *client_construct_info_line(const char *info, char *out_line)
+{
+	struct tm *tm;
+	time_t t;
+
+	if ((t = time(NULL)) == ((time_t) -1))
+		return NULL;
+	tm = localtime(&t);
+	sprintf(out_line,
+			"%02d:%02d:%02d\033[1m\033[31m%13s\033[0m \033[32m| "
+			"\033[31m%s\033[0m", tm->tm_hour, tm->tm_min, tm->tm_sec,
+			"[*]", info);
+
+	return out_line;
+}
+
+void client_info_printline(const char *line)
+{
+	char log_msgline[256];
+
+	client_construct_info_line(line, log_msgline);
+	client_print_line(log_msgline);
+}

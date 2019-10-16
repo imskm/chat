@@ -5,6 +5,8 @@
 #include <ctype.h>
 #include <time.h>
 
+#include <cursor.h>
+
 #include "easyio.h"
 #include "chat.h"
 
@@ -13,18 +15,15 @@ static int prepare_request_for_message(struct request *req,
 static bool chat_is_request_msg(struct request *req);
 static int chat_get_request_type(int status);
 
+static int  cmd_bufi = 0;
+static char cmd_buf[BUFFSIZE];
 
-int chat_command_handle(struct client *client)
+int chat_command_handle(struct client *client, char *cmd_buf)
 {
 	int 				nbytes, ret;
-	String 				cmd_buf;
 	struct request 		req = {0};
 
 	ret = 0;
-
-	/* 1. Get command from stdin and detect command type */
-	if (GetString(&cmd_buf, stdin) == 0)
-		return 0;
 
 	str_trim(cmd_buf);
 
@@ -65,7 +64,9 @@ int	chat_command_prepare(struct request *req, const char *cmd_buf)
 
 	/* 1.1. Handle first phase of the command */
 	if ((cmd_index = command_handle(&cmd_bufp)) == -1) {
-		fprintf(stderr, "[!] Unknown command: %s\n", cmd_buf);
+		char tmp[256];
+		sprintf(tmp, "Unknown command: %s", cmd_buf);
+		client_info_printline(tmp);
 		return -1;
 	}
 
@@ -108,10 +109,10 @@ int	chat_request_send(struct client *client, struct request *req)
 	/* Add CRLF at the end */
 	nbytes = sprintf(buf, "%s \r\n", buf);
 
-	fprintf(stderr, "%s\n", buf);
+	//fprintf(stderr, "%s\n", buf);
 
 	if (write(client->fd, buf, nbytes) == -1) {
-		perror("chat_request_send: write error");
+		client_info_printline("chat_request_send: write error");
 		return -1;
 	}
 
@@ -124,7 +125,7 @@ static int prepare_request_for_message(struct request *req,
 	/* If user is not associated with other user then he/she
 	 * can not send message without using /msg command */
 	if (!req->dest) {
-		fprintf(stderr, "[!] Can't send message, you are not associated\n");
+		client_info_printline("Can't send message, you are not associated");
 		return -1;
 	}
 	req->irc_cmd = commands[command_message_get_index()].irc_cmd;
@@ -214,7 +215,9 @@ int chat_request_prepare(struct request *req, struct collection *collection)
 	/* 1.1. Handle first phase of the request command message */
 	if ((cmd_index = request_handle(req, collection)) == -1) {
 		req->status = ERR_UNKNOWNCOMMAND; /* only error request_handle check */
-		fprintf(stderr, "[!] Unknown command: %s\n", cmd_bufp);
+		char tmp[256];
+		sprintf(tmp, "Unknown command: %s", cmd_bufp);
+		client_info_printline(tmp);
 		return -1;
 	}
 
@@ -266,20 +269,22 @@ bool chat_validate_nick(const char *nick)
 
 	/* nick validation */
 	if ((len = strlen(nick)) > CLIENT_USERNAME_MAX_LEN) {
-		fprintf(stderr, "[*] Invalid username: max %d characters allowed\n",
+		char tmp[256];
+		sprintf(tmp, "Invalid username: max %d characters allowed",
 				CLIENT_USERNAME_MAX_LEN);
+		client_info_printline(tmp);
 		return false;
 	}
 	sprintf(regexstr, "^[a-zA-Z0-9]{1,%d}$", CLIENT_USERNAME_MAX_LEN);
 
 	if (regcomp(&regex, regexstr, REG_EXTENDED) != 0) {
-		fprintf(stderr, "[*] client_validate_username: regcomp error\n");
+		client_info_printline("client_validate_username: regcomp error");
 		goto out;
 	}
 
 	if (regexec(&regex, nick, 0, NULL, 0) == REG_NOMATCH) {
-		fprintf(stderr, "[*] Invalid username: Onlye a-Z, A-Z and 0-9 "
-				"characters are allowed\n");
+		client_info_printline("Invalid username: Onlye a-Z, A-Z and 0-9 "
+				"characters are allowed");
 		goto out;
 	}
 
@@ -321,7 +326,7 @@ static int chat_get_request_type(int status)
 
 int chat_response_handle(struct client *client)
 {
-	unsigned char buf[BUFFSIZE], *p;
+	unsigned char buf[BUFFSIZE], *p, line[BUFFSIZE];
 	ssize_t nbytes;
 	struct request req = {0};
 
@@ -329,7 +334,7 @@ int chat_response_handle(struct client *client)
 	if ((nbytes = read(client->fd, buf, sizeof(buf) - 1)) == 0) {
 		return PEER_TERMINATED;
 	} else if (nbytes == -1) { /* Else handle error */
-		perror("read error");
+		client_info_printline("read error");
 		return -1;
 	}
 	buf[nbytes] = 0;
@@ -338,17 +343,11 @@ int chat_response_handle(struct client *client)
 
 	/* 2. Prepare the request structure. If response is numeric reply then
 	 *    handle it here */
-	/*
-	:irc.example.com 001 borja :Welcome to the Internet Relay Network
-		borja!borja@polaris.cs.uchicago.edu
-	:irc.example.com 433 * borja :Nickname is already in use.
-	:irc.example.org 332 borja #cmsc23300 :A channel for CMSC 23300 students
-	:amy!amy@foo.example.com PRIVMSG rory :message here
-	*/
-
 	/* Parsing server response message */
 	if (chat_message_parse(buf, &req) == -1) {
-		fprintf(stderr, "[!] chat_response_handle: parse error: %s\n", buf);
+		char tmp[256];
+		sprintf(tmp, "parser error: %s", buf);
+		client_info_printline(tmp);
 		return -1;
 	}
 
@@ -361,10 +360,11 @@ int chat_response_handle(struct client *client)
 	fprintf(stderr, "status: %d\n", req.status);
 	fprintf(stderr, "Original: %s\n", buf);
 	*/
-	fprintf(stdout, "\n");
 
-	/* If response message is a message of user then handle it */
-	return chat_render_line(&req, req.body);
+	chat_render_line(&req, req.body, line);
+	client_print_line(line);
+
+	return 0;
 }
 
 char *chat_serialize_nick(struct clients *clients, char *buf, size_t size)
@@ -476,22 +476,22 @@ bool isinteger(unsigned char *str)
 	return true;
 }
 
-int chat_render_line(struct request *req, const char *buf)
+int chat_render_line(struct request *req, const char *buf, unsigned char *line)
 {
 	const int win_width = 80, win_height = 25;
-	unsigned char line[BUFFSIZE], part[128];
+	unsigned char part[128];
 	struct tm *tm;
 	time_t t;
 
-	t = time(NULL);
+	if ((t = time(NULL)) == ((time_t) -1))
+		return -1;
 	tm = localtime(&t);
-	//fprintf(stderr, "%0d:%0d:%0d\n", tm->tm_hour, tm->tm_min, tm->tm_sec);
 	sprintf(line, "%02d:%02d:%02d", tm->tm_hour, tm->tm_min, tm->tm_sec);
 	if (req->status == 0) {
-		sprintf(part, "\033[1m%13s \033[32m|\033[0m ", req->orig);
+		sprintf(part, "\033[1m%13s\033[0m \033[32m|\033[0m ", req->orig);
 		strcat(line, part);
 	} else {
-		sprintf(part, "\033[1m%13s \033[32m|\033[0m ", " ");
+		sprintf(part, "\033[1m%13s\033[0m \033[32m|\033[0m ", " ");
 		strcat(line, part);
 	}
 
@@ -506,8 +506,6 @@ int chat_render_line(struct request *req, const char *buf)
 	} else if (req->body) {
 		strcat(line, req->body);
 	}
-
-	fprintf(stdout, "%s\n", line);
 
 	return 0;
 }

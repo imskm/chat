@@ -127,7 +127,7 @@ int		client_send_message(struct client *client, const char *msg);
  *      ii. chat_command_prepare_CMD() is called (CMD is specific command)
  *   3. chat_reuqest_send() is called from chat_command_handle()
  */
-int		chat_command_handle(struct client *client);
+int		chat_command_handle(struct client *client, char *cmd_buf);
 int		chat_command_prepare(struct request *req, const char *cmd_buf);
 int		chat_request_send(struct client *client, struct request *req);
 int chat_response_handle(struct client *client);
@@ -150,9 +150,12 @@ bool 	chat_validate_nick(const char *nick);
 int		chat_find_nick(struct clients *clients, const char *nick);
 char	*chat_serialize_nick(struct clients *clients, char *buf, size_t size);
 
-int 	chat_render_line(struct request *req, const char *buf);
+int 	chat_render_line(struct request *req, const char *buf, unsigned char *line);
 int 	chat_calc_reply_index(int status);
 int		chat_message_parse(unsigned char *msg, struct request *req);
 bool	isinteger(unsigned char *str);
+
+void client_print_line(const char *line);
+void client_info_printline(const char *line);
 
 #endif
