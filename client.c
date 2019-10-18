@@ -2,7 +2,6 @@
 #include <regex.h>
 #include <stdbool.h>
 #include <termios.h>
-#include <time.h>
 
 #include <libsocket.h>
 #include <cursor.h>
@@ -18,7 +17,6 @@ struct text_view {
 
 int cui_textview(struct text_view *textv);
 void client_render_cmdline(char *status_line, char *prompt, char *typed_cmd);
-char *client_construct_info_line(const char *info, char *out_line);
 
 bool is_quit = false;
 
@@ -83,7 +81,7 @@ int main(int argc, char *argv[])
 		/* If socket is ready for read then read */
 		if (FD_ISSET(client.fd, &rset)) {
 			if (chat_response_handle(&client) == PEER_TERMINATED) {
-				client_info_printline("Server terminated prematurely");
+				chat_info_printline("Server terminated prematurely");
 				goto out;
 			}
 			if (--nready == 0)
@@ -101,7 +99,7 @@ int main(int argc, char *argv[])
 	}
 
 out:
-	client_info_printline("Closing connection...");
+	chat_info_printline("Closing connection...");
 	close(sockfd);
 	tcsetattr(STDIN_FILENO, TCSANOW, &term_orig);
 
@@ -364,35 +362,3 @@ void client_render_cmdline(char *status_line, char *prompt, char *typed_cmd)
 	fflush(stdout);
 }
 
-void client_print_line(const char *line)
-{
-	cur_up(1);
-	cur_toleft();
-	fprintf(stdout, "\033[0K"); /* Clear line */
-	cur_toleft();
-	fprintf(stdout, "%s\n\n", line);
-}
-
-char *client_construct_info_line(const char *info, char *out_line)
-{
-	struct tm *tm;
-	time_t t;
-
-	if ((t = time(NULL)) == ((time_t) -1))
-		return NULL;
-	tm = localtime(&t);
-	sprintf(out_line,
-			"%02d:%02d:%02d\033[1m\033[31m%13s\033[0m \033[32m| "
-			"\033[31m%s\033[0m", tm->tm_hour, tm->tm_min, tm->tm_sec,
-			"[*]", info);
-
-	return out_line;
-}
-
-void client_info_printline(const char *line)
-{
-	char log_msgline[256];
-
-	client_construct_info_line(line, log_msgline);
-	client_print_line(log_msgline);
-}
