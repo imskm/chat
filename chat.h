@@ -155,7 +155,8 @@ int 	chat_calc_reply_index(int status);
 int		chat_message_parse(unsigned char *msg, struct request *req);
 bool	isinteger(unsigned char *str);
 
-void client_print_line(const char *line);
-void client_info_printline(const char *line);
+void chat_print_line(const char *line);
+void chat_info_printline(const char *line);
+char *chat_construct_info_line(const char *info, char *out_line);
 
 #endif

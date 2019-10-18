@@ -66,7 +66,7 @@ int	chat_command_prepare(struct request *req, const char *cmd_buf)
 	if ((cmd_index = command_handle(&cmd_bufp)) == -1) {
 		char tmp[256];
 		sprintf(tmp, "Unknown command: %s", cmd_buf);
-		client_info_printline(tmp);
+		chat_info_printline(tmp);
 		return -1;
 	}
 
@@ -112,7 +112,7 @@ int	chat_request_send(struct client *client, struct request *req)
 	//fprintf(stderr, "%s\n", buf);
 
 	if (write(client->fd, buf, nbytes) == -1) {
-		client_info_printline("chat_request_send: write error");
+		chat_info_printline("chat_request_send: write error");
 		return -1;
 	}
 
@@ -125,7 +125,7 @@ static int prepare_request_for_message(struct request *req,
 	/* If user is not associated with other user then he/she
 	 * can not send message without using /msg command */
 	if (!req->dest) {
-		client_info_printline("Can't send message, you are not associated");
+		chat_info_printline("Can't send message, you are not associated");
 		return -1;
 	}
 	req->irc_cmd = commands[command_message_get_index()].irc_cmd;
@@ -217,7 +217,7 @@ int chat_request_prepare(struct request *req, struct collection *collection)
 		req->status = ERR_UNKNOWNCOMMAND; /* only error request_handle check */
 		char tmp[256];
 		sprintf(tmp, "Unknown command: %s", cmd_bufp);
-		client_info_printline(tmp);
+		chat_info_printline(tmp);
 		return -1;
 	}
 
@@ -272,18 +272,18 @@ bool chat_validate_nick(const char *nick)
 		char tmp[256];
 		sprintf(tmp, "Invalid username: max %d characters allowed",
 				CLIENT_USERNAME_MAX_LEN);
-		client_info_printline(tmp);
+		chat_info_printline(tmp);
 		return false;
 	}
 	sprintf(regexstr, "^[a-zA-Z0-9]{1,%d}$", CLIENT_USERNAME_MAX_LEN);
 
 	if (regcomp(&regex, regexstr, REG_EXTENDED) != 0) {
-		client_info_printline("client_validate_username: regcomp error");
+		chat_info_printline("client_validate_username: regcomp error");
 		goto out;
 	}
 
 	if (regexec(&regex, nick, 0, NULL, 0) == REG_NOMATCH) {
-		client_info_printline("Invalid username: Onlye a-Z, A-Z and 0-9 "
+		chat_info_printline("Invalid username: Onlye a-Z, A-Z and 0-9 "
 				"characters are allowed");
 		goto out;
 	}
@@ -334,7 +334,7 @@ int chat_response_handle(struct client *client)
 	if ((nbytes = read(client->fd, buf, sizeof(buf) - 1)) == 0) {
 		return PEER_TERMINATED;
 	} else if (nbytes == -1) { /* Else handle error */
-		client_info_printline("read error");
+		chat_info_printline("read error");
 		return -1;
 	}
 	buf[nbytes] = 0;
@@ -347,7 +347,7 @@ int chat_response_handle(struct client *client)
 	if (chat_message_parse(buf, &req) == -1) {
 		char tmp[256];
 		sprintf(tmp, "parser error: %s", buf);
-		client_info_printline(tmp);
+		chat_info_printline(tmp);
 		return -1;
 	}
 
@@ -362,7 +362,7 @@ int chat_response_handle(struct client *client)
 	*/
 
 	chat_render_line(&req, req.body, line);
-	client_print_line(line);
+	chat_print_line(line);
 
 	return 0;
 }
@@ -509,3 +509,37 @@ int chat_render_line(struct request *req, const char *buf, unsigned char *line)
 
 	return 0;
 }
+
+void chat_info_printline(const char *line)
+{
+	char log_msgline[256];
+
+	chat_construct_info_line(line, log_msgline);
+	chat_print_line(log_msgline);
+}
+
+void chat_print_line(const char *line)
+{
+	cur_up(1);
+	cur_toleft();
+	fprintf(stdout, "\033[0K"); /* Clear line */
+	cur_toleft();
+	fprintf(stdout, "%s\n\n", line);
+}
+
+char *chat_construct_info_line(const char *info, char *out_line)
+{
+	struct tm *tm;
+	time_t t;
+
+	if ((t = time(NULL)) == ((time_t) -1))
+		return NULL;
+	tm = localtime(&t);
+	sprintf(out_line,
+			"%02d:%02d:%02d\033[1m\033[31m%13s\033[0m \033[32m| "
+			"\033[31m%s\033[0m", tm->tm_hour, tm->tm_min, tm->tm_sec,
+			"[*]", info);
+
+	return out_line;
+}
+
