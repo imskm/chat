@@ -20,6 +20,7 @@ void client_render_cmdline(char *status_line, char *prompt, char *typed_cmd);
 
 bool is_quit = false;
 
+static struct client client = {0};
 
 int main(int argc, char *argv[])
 {
@@ -27,7 +28,6 @@ int main(int argc, char *argv[])
 	struct sockaddr_in serveraddr;
 	unsigned char buf[BUFFSIZE] = {0};
 	int username_len, ret;
-	struct client client = {0};
 	char errors[BUFFSIZE] = {0};
 	struct termios term_orig, term;
 	struct text_view text_view = {0};
@@ -362,3 +362,10 @@ void client_render_cmdline(char *status_line, char *prompt, char *typed_cmd)
 	fflush(stdout);
 }
 
+int client_nick_update(const char *nick)
+{
+	strncpy(client.nick, nick, CLIENT_USERNAME_MAX_LEN);
+	client.nick[CLIENT_USERNAME_MAX_LEN] = 0;
+
+	return 0;
+}

@@ -99,6 +99,7 @@ int		server_handle_assoc(struct clients *clients, int index, char *buf);
 int		server_send_message(struct clients *clients, int index, char *buf);
 bool	server_isclient_assoc(struct client *client);
 
+int 	client_nick_update(const char *nick);
 int 	client_handle_command(struct client *client);
 int 	client_handle_response(struct client *client);
 int 	client_username_check(int sockfd, const char *username);

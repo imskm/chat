@@ -367,6 +367,14 @@ int chat_response_handle(struct client *client)
 	fprintf(stderr, "Original: %s\n", buf);
 	*/
 
+	/* Handle special response which requires client state change for example
+	 * setting a nick will create RPL_WELCOME response from server and client's
+	 * nick need to be changed in client instance and the same will be reflected
+	 * in prompt */
+	if (req.status == RPL_WELCOME) {
+		client_nick_update(req.params[0]);
+	}
+
 	chat_render_line(&req, req.body, line);
 	chat_print_line(line);
 
