@@ -117,8 +117,13 @@ int response_send_msg(struct request *req, struct collection *col)
 	/* 4. Send the message to recipient */
 	sprintf(buf, ":%s %s %s :%s", req->src->nick, req->irc_cmd, req->dest,
 			req->body);
+	i = response_send(recipient->fd, buf, strlen(buf));
 
-	return response_send(recipient->fd, buf, strlen(buf));
+	/* 5. Send the same message to the sender */
+	sprintf(buf, ":%s %s %s :%s", req->src->nick, req->irc_cmd, req->src->nick,
+			req->body);
+
+	return response_send(req->src->fd, buf, strlen(buf)) && i;
 }
 
 int response_send_rpl_none(struct request *req, struct collection *col)
