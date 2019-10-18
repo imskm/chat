@@ -20,6 +20,7 @@ int response_send_err(struct request *req, struct collection *col);
 int response_send_msg(struct request *req, struct collection *col);
 
 
+int response_send_rpl_welcome(struct request *req, struct collection *col);
 int response_send_rpl_none(struct request *req, struct collection *col);
 
 int response_send_rpl_join(struct request *req, struct collection *col);

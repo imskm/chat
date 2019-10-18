@@ -191,8 +191,14 @@ int chat_request_handle(struct collection *collection, fd_set *set)
 		return -1;
 	}
 
+	/* If request is for nick then handle it here because RPL_WELCOME
+	 * does not exist in response array */
+	if (req.status == RPL_WELCOME) {
+		return response_send_rpl_welcome(&req, collection);
+	}
+
 	/* 3. Response send */
-	/* If request is for sending message then call message sending function*/
+	/* If request is for sending reply to request sender */
 	if (chat_get_request_type(req.status) == REQTYPE_RPL) {
 		int index = chat_calc_reply_index(req.status);
 		return responses[index].handle(&req, collection);

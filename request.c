@@ -172,7 +172,7 @@ int request_handle_names(struct request *req, struct collection *collection)
 int request_handle_nick(struct request *req, struct collection *collection)
 {
 	int n, ret = 0;
-	char *parts[4] = {0}, *p;
+	char *parts[4] = {0}, *p, buf[BUFFSIZE];
 
 	p = strdup(collection->buf);
 
@@ -200,10 +200,11 @@ int request_handle_nick(struct request *req, struct collection *collection)
 
 	/* Since all the check passed therefore nick is assigned to this client */
 	strcpy(collection->clients->clients[collection->index]->nick, parts[2]);
+	sprintf(buf, "Welcome to the Internet Relay Network %s", req->src->nick);
 
 	request_dest_set(req, parts[2]);
-	req->status = RPL_NONE;
-	req->body = strdup("Nick has been changed successfully!");
+	request_body_set(req, buf);
+	req->status = RPL_WELCOME;
 	/* TODO Notify to other users about nick change */
 
 cleanup:

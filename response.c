@@ -126,6 +126,16 @@ int response_send_msg(struct request *req, struct collection *col)
 	return response_send(req->src->fd, buf, strlen(buf)) && i;
 }
 
+int response_send_rpl_welcome(struct request *req, struct collection *col)
+{
+	char buf[BUFFSIZE];
+
+	/* 5. Send the same message to the sender */
+	sprintf(buf, "%03d %s :%s", RPL_WELCOME, req->src->nick, req->body);
+
+	return response_send(req->src->fd, buf, strlen(buf));
+}
+
 int response_send_rpl_none(struct request *req, struct collection *col)
 {
 	unsigned char buf[BUFFSIZE];
