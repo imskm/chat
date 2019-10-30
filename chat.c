@@ -36,6 +36,12 @@ int chat_command_handle(struct client *client, char *cmd_buf)
 	if (chat_command_prepare(&req, cmd_buf) == -1)
 		return -1;
 
+#ifdef CLIENT_APP
+	/* If command is quit then set quit flag */
+	if (req.status == CLIENT_QUIT)
+		client_quit_set();
+#endif
+
 	/* 3. Send the request to server */
 	if (chat_request_send(client, &req) == -1) {
 		ret = -1;
@@ -87,7 +93,7 @@ int	chat_command_prepare(struct request *req, const char *cmd_buf)
 int	chat_request_send(struct client *client, struct request *req)
 {
 	int nbytes;
-	char buf[BUFFSIZE];
+	char buf[BUFFSIZE], tmp[BUFFSIZE];
 
 	/* TODO buf must not exceed 512 bytes because its the IRC message
 	 * len limit */
@@ -95,23 +101,30 @@ int	chat_request_send(struct client *client, struct request *req)
 	nbytes = sprintf(buf, ":%s %s", req->src->nick, req->irc_cmd);
 
 	/* Set destination (if any) */
-	if (req->dest)
-		nbytes = sprintf(buf, "%s %s", buf, req->dest);
+	if (req->dest) {
+		sprintf(tmp, " %s", req->dest);
+		strcat(buf, tmp);
+	}
 
 	/* Set params */
-	for (int i = 0; req->params[i] != NULL; i++)
-		nbytes = sprintf(buf, "%s %s", buf, req->params[i]);
+	for (int i = 0; req->params[i] != NULL; i++) {
+		sprintf(tmp, " %s", req->params[i]);
+		strcat(buf, tmp);
+	}
 
 	/* Set message (if any) */
-	if (req->body)
-		nbytes = sprintf(buf, "%s :%s", buf, req->body);
+	if (req->body) {
+		sprintf(tmp, " :%s", req->body);
+		strcat(buf, tmp);
+	}
 
 	/* Add CRLF at the end */
-	nbytes = sprintf(buf, "%s \r\n", buf);
+	strcat(buf, " \r\n");
 
 	//fprintf(stderr, "%s\n", buf);
+	chat_info_printline(buf);
 
-	if (write(client->fd, buf, nbytes) == -1) {
+	if (write(client->fd, buf, strlen(buf)) == -1) {
 		chat_info_printline("chat_request_send: write error");
 		return -1;
 	}
@@ -167,6 +180,7 @@ int chat_request_handle(struct collection *collection, fd_set *set)
 		return -1;
 	}
 	buf[nbytes] = 0;
+	fprintf(stderr, "[*] Client Request: %s\n", buf);
 
 	/* If client doesn't have a nick then don't allow to perform any action */
 	/*
@@ -195,6 +209,18 @@ int chat_request_handle(struct collection *collection, fd_set *set)
 	 * does not exist in response array */
 	if (req.status == RPL_WELCOME) {
 		return response_send_rpl_welcome(&req, collection);
+	}
+	
+	/* If request is for quit then handle it here */
+	if (req.status == CLIENT_QUIT) {
+		fprintf(stderr, "[*] Quit request received\n");
+		FD_CLR(client->fd, set); /* Clear fd from read set */
+		close(client->fd);
+		if (req.src->partner == NULL) {
+			return chat_client_session_close(clients, index);
+		}
+		response_send_rpl_quit(&req, collection);
+		return chat_client_session_close(clients, index);
 	}
 
 	/* 3. Response send */
@@ -367,6 +393,7 @@ int chat_response_handle(struct client *client)
 	fprintf(stderr, "Original: %s\n", buf);
 	*/
 
+#ifdef CLIENT_APP
 	/* Handle special response which requires client state change for example
 	 * setting a nick will create RPL_WELCOME response from server and client's
 	 * nick need to be changed in client instance and the same will be reflected
@@ -374,6 +401,7 @@ int chat_response_handle(struct client *client)
 	if (req.status == RPL_WELCOME) {
 		client_nick_update(req.params[0]);
 	}
+#endif
 
 	chat_render_line(&req, req.body, line);
 	chat_print_line(line);

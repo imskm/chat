@@ -216,6 +216,10 @@ cleanup:
 int request_handle_quit(struct request *req, struct collection *collection)
 {
 	puts("request_handle_quit");
+	req->status = CLIENT_QUIT;
+	if (req->body) {
+		request_body_set(req, req->body);
+	}
 
 	return 0;
 }

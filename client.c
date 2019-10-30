@@ -72,7 +72,7 @@ int main(int argc, char *argv[])
 	FD_SET(fileno(stdin), &allset);
 	FD_SET(client.fd, &allset);
 	maxfd = max(client.fd, fileno(stdin)) + 1;
-	for (; ;) {
+	for(; ;) {
 		sprintf(prompt, "[%s]", client.nick);
 		client_render_cmdline(status_line, prompt, text_view.buf);
 		rset = allset;
@@ -96,7 +96,12 @@ int main(int argc, char *argv[])
 				text_view.buf[0] = 0;
 			}
 		}
+
+		if (is_quit)
+			break;
 	}
+
+	chat_info_printline("Sent quit request to server");
 
 out:
 	chat_info_printline("Closing connection...");
@@ -368,4 +373,9 @@ int client_nick_update(const char *nick)
 	client.nick[CLIENT_USERNAME_MAX_LEN] = 0;
 
 	return 0;
+}
+
+void client_quit_set()
+{
+	is_quit = true;
 }

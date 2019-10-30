@@ -204,6 +204,11 @@ int response_send_rpl_nick(struct request *req, struct collection *col)
 
 int response_send_rpl_quit(struct request *req, struct collection *col)
 {
+	char buf[BUFFSIZE];
+
+	sprintf(buf, ":%s QUIT %s", req->src->nick, req->src->partner->nick);
+
+	return response_send(req->src->partner->fd, buf, strlen(buf));
 }
 
 

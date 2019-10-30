@@ -7,6 +7,8 @@
 
 #define PEER_TERMINATED 0x10
 
+#define CLIENT_QUIT   -001
+
 #define REQUEST_USERN 0x01 		/* Check username 				 */
 #define REQUEST_AVAIL 0x02		/* List available online clients */
 #define REQUEST_ASSOC 0x03		/* Assocciate client with client */
@@ -110,6 +112,7 @@ int		client_request_assoc(struct client *client, char *errors,
 		const char *username);
 int 	client_get_command_type(const char *cmd);
 int		client_send_message(struct client *client, const char *msg);
+void	client_quit_set();
 
 //#include "codes.h"
 //const struct {

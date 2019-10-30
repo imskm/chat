@@ -205,6 +205,8 @@ int	command_handle_quit(struct request *req, const char *cmd_buf)
 	}
 
 	str_ltrim(cmd_cp);
+	req->status = CLIENT_QUIT;
+	chat_info_printline("command_handle_quit called");
 
 	if (cmd_cp[0])
 		request_body_set(req, cmd_cp);
