@@ -221,8 +221,8 @@ int chat_request_handle(struct collection *collection, fd_set *set)
 	/* 3. Response send */
 	/* If request is for sending reply to request sender */
 	if (chat_get_request_type(req.status) == REQTYPE_RPL) {
-		int index = chat_calc_reply_index(req.status);
-		return responses[index].handle(&req, collection);
+		int i = chat_calc_reply_index(req.status);
+		return responses[i].handle(&req, collection);
 	}
 
 	/* Send message */
