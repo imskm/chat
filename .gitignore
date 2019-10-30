@@ -3,6 +3,8 @@ server
 *.o
 filter
 new
+TODO.md
+obj/
 
 .*
 !.gitignore
