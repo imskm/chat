@@ -7,7 +7,6 @@
 
 #include <cursor.h>
 
-#include "easyio.h"
 #include "chat.h"
 
 static int prepare_request_for_message(struct request *req,

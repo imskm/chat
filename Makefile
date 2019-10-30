@@ -1,8 +1,8 @@
 CC=gcc
-LIBSPATH=~/Dropbox/Developments/c_devl/clib/objs
-CFLAGS=-I ~/Dropbox/Developments/c_devl/clib/headers/
-SRCSPATH=./src
-OBJSPATH=./obj
+LIBSPATH=lib
+CFLAGS=-Iinclude
+SRCSPATH=src
+OBJSPATH=obj
 OBJS=$(OBJSPATH)/chat.o $(OBJSPATH)/command.o $(OBJSPATH)/request.o \
 	 $(OBJSPATH)/response.o
 LIBS=$(LIBSPATH)/libsocket.o $(LIBSPATH)/str.o $(LIBSPATH)/cursor.o $(OBJS)
@@ -10,8 +10,7 @@ CFLAGS+=-g
 # CFLAGS+=-Wall -Werror -Wmissing-prototypes -Wcast-qual
 # CFLAGS+=-Wmissing-declarations -Wshadow -Wpointer-arith
 # CFLAGS+=-Wsign-compare -Isrc/
-CFLAGS+=-Wunused-variable -Wunused-function
-CFLAGS+=-Isrc/
+CFLAGS+=-Wunused-variable -Wunused-function -Wshadow
 
 all: server client
 
