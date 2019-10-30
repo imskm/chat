@@ -5,10 +5,12 @@ LIBS=$(LIBSPATH)/libsocket.o $(LIBSPATH)/str.o chat.o command.o request.o respon
 CFLAGS+=-g
 
 server: server.c
+	$(CC) -c -o chat.o chat.c $(CFLAGS)
 	$(CC) -o server server.c $(LIBS) $(CFLAGS)
 
 client: client.c
-	$(CC) -o client client.c $(LIBS) $(CFLAGS)
+	$(CC) -c -o chat.o chat.c $(CFLAGS) -DCLIENT_APP
+	$(CC) -o client client.c $(LIBS) $(CFLAGS) 
 
 command: command.c
 	$(CC) -c -o command.o command.c $(CFLAGS)
@@ -25,3 +27,11 @@ clean:
 	rm *.o
 	rm client
 	rm server
+
+all:
+	make request
+	make response
+	make command
+	make chat
+	make server
+	make client
