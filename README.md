@@ -395,6 +395,11 @@ Note: :<prefix> is required in case of server communicating with other server an
 18. Implement `join` command					-- done
 19. Implement `msg` command						-- done
 20. Implement `quit` command
+21. Fix server responds empty NAMES reply which it should not. Server should send RPL\_ENDOFNAMES when no user is online
+24. Fix the reply protocol, current implementatino is missing prefix. See http://chi.cs.uchicago.edu/chirc/irc.html
+25. When an IRC client connects to an IRC server, it must first register its connection. This is done by sending two messages: NICK and USER.
+26. When new client successfully registes him/her self then send welcome message to him/her.
+27. Fix bug when quitting client server hit with SIGSEGV.
 
 
 # Message commands for all requests
