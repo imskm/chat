@@ -4,15 +4,6 @@
 
 #include "rescodes.h" /* Response codes in response struct */
 
-static const char *variables[] = {
-	"<channel>",
-	"<command>",
-	"<nick>",
-	"<server>",
-	"<user>",
-	NULL,
-};
-
 static void prepare_error_message(struct request *req,
 		const struct response *res, struct collection *col);
 

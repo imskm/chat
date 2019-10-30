@@ -60,8 +60,6 @@ struct client {
 	int fd;
 	int pair_fd;
 	struct client *partner;
-	/* nclient = number of clients in clients array, only to
-	 * check connected client limit */
 	unsigned char nick[CLIENT_USERNAME_MAX_LEN + 1];
 	unsigned char pair[CLIENT_USERNAME_MAX_LEN + 1];
 	bool is_username_set;
@@ -70,6 +68,8 @@ struct client {
 
 struct clients {
 	struct client *clients[FD_SETSIZE];
+	/* nclient = number of clients in clients array, only to
+	 * check connected client limit */
 	size_t nclient;
 	size_t clients_i;
 };
@@ -86,8 +86,6 @@ struct collection {
 #include "request.h"
 #include "command.h"
 #include "response.h"
-
-//static char errors[BUFFSIZE];
 
 int 	server_handle_request(struct clients *clients, int index);
 int 	get_request_type(unsigned char *buf, ssize_t nbytes);
@@ -114,15 +112,6 @@ int 	client_get_command_type(const char *cmd);
 int		client_send_message(struct client *client, const char *msg);
 void	client_quit_set();
 
-//#include "codes.h"
-//const struct {
-//	int   code;
-//	char *name;
-//	char *desc;
-//	int  (*callback)(struct request *, const char *); /* last arg is buf */
-//} reply_codes = {
-//};
-
 /**
  *  From the client side sequence of function call is as:
  *   1. chat_command_handle() is called from main
@@ -134,7 +123,7 @@ void	client_quit_set();
 int		chat_command_handle(struct client *client, char *cmd_buf);
 int		chat_command_prepare(struct request *req, const char *cmd_buf);
 int		chat_request_send(struct client *client, struct request *req);
-int chat_response_handle(struct client *client);
+int 	chat_response_handle(struct client *client);
 
 int 	chat_request_handle(struct collection *collection, fd_set *set);
 int 	chat_request_prepare(struct request *req,
@@ -159,8 +148,8 @@ int 	chat_calc_reply_index(int status);
 int		chat_message_parse(unsigned char *msg, struct request *req);
 bool	isinteger(unsigned char *str);
 
-void chat_print_line(const char *line);
-void chat_info_printline(const char *line);
-char *chat_construct_info_line(const char *info, char *out_line);
+void 	chat_print_line(const char *line);
+void 	chat_info_printline(const char *line);
+char 	*chat_construct_info_line(const char *info, char *out_line);
 
 #endif

@@ -15,12 +15,9 @@ static int prepare_request_for_message(struct request *req,
 static bool chat_is_request_msg(struct request *req);
 static int chat_get_request_type(int status);
 
-static int  cmd_bufi = 0;
-static char cmd_buf[BUFFSIZE];
-
 int chat_command_handle(struct client *client, char *cmd_buf)
 {
-	int 				nbytes, ret;
+	int 				ret;
 	struct request 		req = {0};
 
 	ret = 0;
@@ -92,13 +89,12 @@ int	chat_command_prepare(struct request *req, const char *cmd_buf)
 
 int	chat_request_send(struct client *client, struct request *req)
 {
-	int nbytes;
 	char buf[BUFFSIZE], tmp[BUFFSIZE];
 
 	/* TODO buf must not exceed 512 bytes because its the IRC message
 	 * len limit */
 
-	nbytes = sprintf(buf, ":%s %s", req->src->nick, req->irc_cmd);
+	sprintf(buf, ":%s %s", req->src->nick, req->irc_cmd);
 
 	/* Set destination (if any) */
 	if (req->dest) {
@@ -358,7 +354,7 @@ static int chat_get_request_type(int status)
 
 int chat_response_handle(struct client *client)
 {
-	unsigned char buf[BUFFSIZE], *p, line[BUFFSIZE];
+	unsigned char buf[BUFFSIZE], line[BUFFSIZE];
 	ssize_t nbytes;
 	struct request req = {0};
 
@@ -520,7 +516,6 @@ bool isinteger(unsigned char *str)
 
 int chat_render_line(struct request *req, const char *buf, unsigned char *line)
 {
-	const int win_width = 80, win_height = 25;
 	unsigned char part[128];
 	struct tm *tm;
 	time_t t;

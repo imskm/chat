@@ -48,7 +48,7 @@ int command_handle(const char **cmd_buf)
 
 
 	for (int i = 0; commands[i].cmd != NULL; i++) {
-		len = max(end - start, strlen(commands[i].cmd));
+		len = max((int) (end - start), (int) strlen(commands[i].cmd));
 
 		if (strncmp(start, commands[i].cmd, len) == 0) {
 			*cmd_buf = end + 1; /* updated to point to start of next param */
@@ -159,7 +159,6 @@ int	command_handle_names(struct request *req, const char *cmd_buf)
 
 	request_param_set(req, buf);
 
-cleanup:
 	free(cmd_cp);
 
 	return ret;
@@ -211,7 +210,6 @@ int	command_handle_quit(struct request *req, const char *cmd_buf)
 	if (cmd_cp[0])
 		request_body_set(req, cmd_cp);
 
-cleanup:
 	free(cmd_cp);
 
 	return ret;
