@@ -1,6 +1,5 @@
 client
 server
-*.o
 filter
 new
 TODO.md
