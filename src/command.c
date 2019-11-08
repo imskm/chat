@@ -51,7 +51,7 @@ int command_handle(const char **cmd_buf)
 		len = max((int) (end - start), (int) strlen(commands[i].cmd));
 
 		if (strncmp(start, commands[i].cmd, len) == 0) {
-			*cmd_buf = end + 1; /* updated to point to start of next param */
+			*cmd_buf = end; /* updated to point to start of next param */
 			return i;
 		}
 	}
