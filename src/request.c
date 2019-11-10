@@ -228,46 +228,37 @@ int request_handle_names(struct request *req, struct collection *collection)
 
 int request_handle_nick(struct request *req, struct collection *collection)
 {
-	int n, ret = 0;
-	char *parts[4] = {0}, *p, buf[BUFFSIZE];
-
-	p = strdup(collection->buf);
+	char buf[BUFFSIZE];
 
 	/* If argument for JOIN command is not given then return error */
-	if ((n = str_split(p, " ", parts, 4)) != 3) {
+	if (req->params[0] == NULL) {
 		req->status = ERR_NONICKNAMEGIVEN;
-		ret = -1;
-		goto cleanup;
+		return -1;
 	}
-	request_dest_set(req, parts[2]);
 
 	/* If given nick fails in validation then return error */
-	if (chat_validate_nick(parts[2]) == false) {
+	if (chat_validate_nick(req->params[0]) == false) {
 		req->status = ERR_ERRONEUSNICKNAME;
-		ret = -1;
-		goto cleanup;
+		return -1;
 	}
 
 	/* If provided new nick exist then return error */
-	if (chat_find_nick(collection->clients, parts[2]) != -1) {
+	if (chat_find_nick(collection->clients, req->params[0]) != -1) {
 		req->status = ERR_NICKNAMEINUSE;
-		ret = -1;
-		goto cleanup;
+		return -1;
 	}
 
 	/* Since all the check passed therefore nick is assigned to this client */
-	strcpy(collection->clients->clients[collection->index]->nick, parts[2]);
+	strcpy(collection->clients->clients[collection->index]->nick,
+		req->params[0]);
 	sprintf(buf, "Welcome to the Internet Relay Network %s", req->src->nick);
 
-	request_dest_set(req, parts[2]);
+	request_dest_set(req, req->params[0]);
 	request_body_set(req, buf);
 	req->status = RPL_WELCOME;
 	/* TODO Notify to other users about nick change */
 
-cleanup:
-	free(p);
-
-	return ret;
+	return 0;
 }
 
 int request_handle_quit(struct request *req, struct collection *collection)
