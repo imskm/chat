@@ -190,6 +190,22 @@ int chat_request_handle(struct collection *collection, fd_set *set)
 	/* Set the source of request (client struct pointer) */
 	req.src = client;
 	collection->buf = buf;
+	/* 1.1 Parse the request */
+	if (request_parse(&req, buf) == -1) {
+		fprintf(stderr, "parser error: failed to parse request '%s'\n",
+				buf);
+		return -1;
+	}
+	/* Leave it here for DEBUGGING
+	fprintf(stderr, "Origin : %s\n", req.orig);
+	fprintf(stderr, "Command: %s\n", req.irc_cmd);
+	fprintf(stderr, "Params :\n");
+	for (int i = 0; req.params[i] != NULL; i++)
+		fprintf(stderr, "      %d: %s\n", i + 1, req.params[i]);
+	if (req.body)
+		fprintf(stderr, "Body   : %s\n", req.body);
+	return 0;
+	*/
 
 	/* 2. Prepare the request struct. If error occurs then handle the error
 	 *    with error response function group */
@@ -261,8 +277,11 @@ int chat_request_prepare(struct request *req, struct collection *collection)
 		return 0;
 	}
 
+	/* request_parse strdups it, therefore free is needed */
+	free((void *) req->irc_cmd);
 	cmd 			= &commands[cmd_index];
 	req->cmd 		= cmd->cmd;
+	req->irc_cmd 	= cmd->irc_cmd;
 
 	/* 2. Since each request has its own unique structure and number of
 	 *    required parameters therefor each request should be handled
