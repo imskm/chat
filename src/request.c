@@ -202,31 +202,20 @@ cleanup:
 
 int request_handle_msg(struct request *req, struct collection *collection)
 {
-	int ret;
-	char *parts[4], *p, *q;
-
-	p = strdup(collection->buf);
-
-	ret = -1;
-	if (str_split(p, " ", parts, 4) != 3) {
+	/* If recipient is missing then set proper error and return */
+	if (req->params[0] == NULL) {
 		req->status = ERR_NORECIPIENT;
-		goto cleanup;
+		return -1;
 	}
 
 	/* If empty message is given the return error and set status */
-	if ((q = strchr(collection->buf + 1, ':')) == NULL) {
+	if (req->body == NULL) {
 		req->status = ERR_NEEDMOREPARAMS; /* Should be Message body empty */
-		goto cleanup;
+		return -1;
 	}
-	ret = 0;
 	req->status = 0; /* Message status code */
-	request_dest_set(req, parts[2]);
-	request_body_set(req, q + 1);
 
-cleanup:
-	free(p);
-
-	return ret;
+	return 0;
 }
 
 int request_handle_names(struct request *req, struct collection *collection)
