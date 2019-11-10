@@ -55,7 +55,6 @@ int request_cleanup(struct request *req)
 {
 	if (req->dest) 		free((void *)req->dest);
 	if (req->orig) 		free((void *)req->orig);
-	if (req->irc_cmd) 	free((void *)req->irc_cmd);
 	/* req->nick should not be freed */
 	for (int i = 0; req->params[i] && i < REQUEST_MAX_PARAMS; i++) {
 		free(req->params[i]);
@@ -66,7 +65,6 @@ int request_cleanup(struct request *req)
 	req->dest = NULL;
 	req->orig = NULL;
 	req->body = NULL;
-	req->irc_cmd = NULL;
 
 	return 0;
 }
@@ -122,7 +120,7 @@ int request_parse(struct request *req, const char *msg)
 
 	/* If current param is body then set it and return */
 	if (*prevp == ':') {
-		request_body_set(req, prevp);
+		request_body_set(req, ++prevp);
 		ret = 0;
 		goto cleanup;
 	}
@@ -149,7 +147,7 @@ int request_parse(struct request *req, const char *msg)
 
 	/* If current param is body then store it as body */
 	if (*prevp == ':') {
-		request_body_set(req, prevp);
+		request_body_set(req, ++prevp);
 	} else { /* Else it's another param set it */
 		request_param_set(req, prevp);
 	}
