@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 
 #include "chat.h"
 
@@ -68,6 +69,99 @@ int request_cleanup(struct request *req)
 	return 0;
 }
 
+int request_parse(struct request *req, const char *msg)
+{
+	int i, ret;
+	char *prevp, *p;
+	char *msgp;
+
+	ret = -1;
+
+	if ((msgp = strdup(msg)) == NULL) {
+		fprintf(stderr, "Error: request_parese: strdup failed\n");
+		return -1;
+	}
+	prevp = msgp;
+
+	if (*prevp != ':') {
+		fprintf(stderr, "Error: Invalid msg '%s'\n", msgp);
+		goto cleanup;
+	}
+
+	prevp++;
+	while (isspace(*prevp)) prevp++; /* Skip white spaces */
+
+	/* Extract <origin> */
+	if ((p = strchr(prevp, ' ')) == NULL) {
+		fprintf(stderr, "Error: Invalid msg '%s'\n", msg);
+		goto cleanup;
+	}
+	*p = 0; /* null terminate origin substring in msgp string */
+	request_orig_set(req, prevp);
+	*p = ' '; /* Undo null termination */
+	prevp = p;
+
+	prevp++;
+	while (isspace(*prevp)) prevp++; /* Skip white spaces */
+
+	/* Extract IRC command */
+	if ((p = strchr(prevp, ' ')) == NULL) {
+		/* TODO this is memory leak, fix it. create a function that will
+		 *  return the IRC command pointer from commands array and not
+		 *  storing pointer for the copy of IRC command */
+		req->irc_cmd = strdup(prevp);
+		ret = 0; /* May be this command does not require any param */
+		goto cleanup;
+	}
+	*p = 0; /* null terminate */
+	req->irc_cmd = strdup(prevp); /* TODO see the just above TODO */
+	*p = ' '; /* Undo null termination */
+	prevp = p;
+
+	prevp++;
+	while (isspace(*prevp)) prevp++; /* Skip white spaces */
+
+	/* If current param is body then set it and return */
+	if (*prevp == ':') {
+		request_body_set(req, prevp);
+		ret = 0;
+		goto cleanup;
+	}
+
+	/* Extract all the parameters */
+	for (i = 0; (p = strchr(prevp, ' ')) != NULL && i < REQUEST_MAX_PARAMS;
+			i++) {
+		*p = 0; /* null terminate */
+		request_param_set(req, prevp);
+		*p = ' '; /* Undo null termination */
+		prevp = p;
+
+		prevp++;
+		while (isspace(*prevp)) prevp++; /* Skip white spaces */
+
+		if (*prevp == ':')
+			break;
+	}
+
+	if (p != NULL && i == REQUEST_MAX_PARAMS) {
+		fprintf(stderr, "Error: request_parse: too many arguments\n");
+		goto cleanup;
+	}
+
+	/* If current param is body then store it as body */
+	if (*prevp == ':') {
+		request_body_set(req, prevp);
+	} else { /* Else it's another param set it */
+		request_param_set(req, prevp);
+	}
+	ret = 0;
+
+
+cleanup:
+	free(msgp);
+
+	return ret;
+}
 
 int request_handle(struct request *req, struct collection *collection)
 {

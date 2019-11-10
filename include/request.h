@@ -25,6 +25,7 @@ int request_body_set(struct request *req, char *body);
 int request_orig_set(struct request *req, const char *orig);
 int request_dest_set(struct request *req, const char *dest);
 
+int request_parse(struct request *req, const char *msg);
 int request_handle(struct request *req, struct collection *collection);
 
 int request_handle_join(struct request *req, struct collection *collection);
