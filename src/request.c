@@ -53,8 +53,9 @@ int request_dest_set(struct request *req, const char *dest)
 
 int request_cleanup(struct request *req)
 {
-	if (req->dest) free((void *)req->dest);
-	if (req->orig) free((void *)req->orig);
+	if (req->dest) 		free((void *)req->dest);
+	if (req->orig) 		free((void *)req->orig);
+	if (req->irc_cmd) 	free((void *)req->irc_cmd);
 	/* req->nick should not be freed */
 	for (int i = 0; req->params[i] && i < REQUEST_MAX_PARAMS; i++) {
 		free(req->params[i]);
@@ -65,6 +66,7 @@ int request_cleanup(struct request *req)
 	req->dest = NULL;
 	req->orig = NULL;
 	req->body = NULL;
+	req->irc_cmd = NULL;
 
 	return 0;
 }
@@ -106,15 +108,12 @@ int request_parse(struct request *req, const char *msg)
 
 	/* Extract IRC command */
 	if ((p = strchr(prevp, ' ')) == NULL) {
-		/* TODO this is memory leak, fix it. create a function that will
-		 *  return the IRC command pointer from commands array and not
-		 *  storing pointer for the copy of IRC command */
 		req->irc_cmd = strdup(prevp);
 		ret = 0; /* May be this command does not require any param */
 		goto cleanup;
 	}
 	*p = 0; /* null terminate */
-	req->irc_cmd = strdup(prevp); /* TODO see the just above TODO */
+	req->irc_cmd = strdup(prevp);
 	*p = ' '; /* Undo null termination */
 	prevp = p;
 
@@ -165,34 +164,11 @@ cleanup:
 
 int request_handle(struct request *req, struct collection *collection)
 {
-	char *bufp = strdup(collection->buf);
-	char *parts[3];
-	int n, ret;
+	for (int i = 0; commands[i].cmd; i++)
+		if (strcmp(req->irc_cmd, commands[i].irc_cmd) == 0)
+			return i;
 
-	ret = -1;
-
-	/* Find second param from the buf */
-	if((n = str_split(bufp, " ", parts, 3)) != 2) 
-		goto cleanup;
-
-	str_trim(parts[0]), str_trim(parts[1]);
-
-	/* Check for empty command
-	 * parts[0] = :nick,  parts[1] = COMMAND */
-	if (strlen(parts[0]) <= 2 || strlen(parts[1]) <= 1)
-		goto cleanup;
-
-	for (int i = 0; commands[i].cmd; i++) {
-		if (strcmp(parts[1], commands[i].irc_cmd) == 0) {
-			ret = i;
-			goto cleanup;
-		}
-	}
-
-cleanup:
-	free(bufp);
-
-	return ret;
+	return -1;
 }
 
 int request_handle_join(struct request *req, struct collection *collection)
