@@ -239,12 +239,17 @@ int chat_request_prepare(struct request *req, struct collection *collection)
 
 	cmd_bufp = collection->buf;
 
-	/* 1.1. Handle first phase of the request command message */
+	/* 1.1 Parse the request */
+	if (request_parse(req, cmd_bufp) == -1) {
+		fprintf(stderr, "parser error: failed to parse request '%s'\n",
+				cmd_bufp);
+		return -1;
+	}
+
+	/* Detect the command */
 	if ((cmd_index = request_handle(req, collection)) == -1) {
 		req->status = ERR_UNKNOWNCOMMAND; /* only error request_handle check */
-		char tmp[256];
-		sprintf(tmp, "Unknown command: %s", cmd_bufp);
-		chat_info_printline(tmp);
+		fprintf(stderr, "Error: Unknown command '%s'\n", cmd_bufp);
 		return -1;
 	}
 
@@ -258,7 +263,6 @@ int chat_request_prepare(struct request *req, struct collection *collection)
 
 	cmd 			= &commands[cmd_index];
 	req->cmd 		= cmd->cmd;
-	req->irc_cmd 	= cmd->irc_cmd;
 
 	/* 2. Since each request has its own unique structure and number of
 	 *    required parameters therefor each request should be handled
