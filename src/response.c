@@ -195,11 +195,13 @@ int response_send_rpl_nick(struct request *req, struct collection *col)
 
 int response_send_rpl_quit(struct request *req, struct collection *col)
 {
-	char buf[BUFFSIZE];
+	//char buf[BUFFSIZE];
 
-	sprintf(buf, ":%s QUIT %s", req->src->nick, req->src->partner->nick);
+	// SEGVINT If src is not associated with partner then server will crash
+	//sprintf(buf, ":%s QUIT %s", req->src->nick, req->src->partner->nick);
 
-	return response_send(req->src->partner->fd, buf, strlen(buf));
+	//return response_send(req->src->partner->fd, buf, strlen(buf));
+	return 0;
 }
 
 
