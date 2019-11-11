@@ -208,6 +208,18 @@ int request_handle_msg(struct request *req, struct collection *collection)
 		return -1;
 	}
 
+	/* If given nick fails in validation then return error */
+	if (chat_validate_nick(req->params[0]) == false) {
+		req->status = ERR_ERRONEUSNICKNAME;
+		return -1;
+	}
+
+	/* If provided new nick does not exist then return error */
+	if (chat_find_nick(collection->clients, req->params[0]) == -1) {
+		req->status = ERR_NICKNAMEINUSE;
+		return -1;
+	}
+
 	/* If empty message is given the return error and set status */
 	if (req->body == NULL) {
 		req->status = ERR_NEEDMOREPARAMS; /* Should be Message body empty */
