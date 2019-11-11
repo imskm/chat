@@ -212,14 +212,13 @@ int chat_request_handle(struct collection *collection, fd_set *set)
 	if (chat_request_prepare(&req, collection) == -1) {
 		/* Send error reply to request sender */
 		int err_i = chat_calc_reply_index(req.status);
-		responses[err_i].handle(&req, collection);
+		responses[err_i].handle(&req, collection); /* Error handler is called */
 		return -1;
 	}
 
 	/* If request is for nick then handle it here because RPL_WELCOME
 	 * does not exist in response array */
 	if (req.status == RPL_WELCOME) {
-		fprintf(stderr, "[*] response_send_rpl_welcome\n");
 		return response_send_rpl_welcome(&req, collection);
 	}
 	
@@ -239,7 +238,6 @@ int chat_request_handle(struct collection *collection, fd_set *set)
 	/* If request is for sending reply to request sender */
 	if (chat_get_request_type(req.status) == REQTYPE_RPL) {
 		int i = chat_calc_reply_index(req.status);
-		fprintf(stderr, "[*] Hanle '%s' response\n", req.irc_cmd);
 		return responses[i].handle(&req, collection);
 	}
 
