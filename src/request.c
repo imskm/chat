@@ -253,7 +253,6 @@ int request_handle_nick(struct request *req, struct collection *collection)
 		req->params[0]);
 	sprintf(buf, "Welcome to the Internet Relay Network %s", req->src->nick);
 
-	request_dest_set(req, req->params[0]);
 	request_body_set(req, buf);
 	req->status = RPL_WELCOME;
 	/* TODO Notify to other users about nick change */
