@@ -85,32 +85,16 @@ int response_send_msg(struct request *req, struct collection *col)
 
 	client = col->clients->clients[col->index];
 
-	/* 1. Check valid nick given for recipient */
-	if (chat_validate_nick(req->dest) == false) {
-		req->status = ERR_ERRONEUSNICKNAME;
-		return response_send_err(req, col);
-	}
+	/* Find recipient */
+	i = chat_find_nick(col->clients, req->params[0]);
+	recipient = col->clients->clients[i];
 
-	/* 2. Check if the message is for associated user, if so then send msg */
-	if (client->is_assoc && strcmp(client->partner->nick, req->dest) == 0) {
-		recipient = client->partner;
-
-	/* 3. Find recipient */
-	} else if ((i = chat_find_nick(col->clients, req->dest)) != -1) {
-		recipient = col->clients->clients[i];
-
-	/* Else recipient not found */
-	} else {
-		req->status = ERR_NOSUCHNICK;
-		return response_send_err(req, col);
-	}
-
-	/* 4. Send the message to recipient */
-	sprintf(buf, ":%s %s %s :%s", req->src->nick, req->irc_cmd, req->dest,
+	/* Send the message to recipient */
+	sprintf(buf, ":%s %s %s :%s", req->src->nick, req->irc_cmd, req->params[0],
 			req->body);
 	i = response_send(recipient->fd, buf, strlen(buf));
 
-	/* 5. Send the same message to the sender */
+	/* Send the same message to the sender */
 	sprintf(buf, ":%s %s %s :%s", req->src->nick, req->irc_cmd, req->src->nick,
 			req->body);
 
