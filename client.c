@@ -50,7 +50,6 @@ int main(int argc, char *argv[])
 	client.pair_fd 				= -1;
 	client.is_username_set 		= false;
 	client.is_assoc 			= false;
-	client.pair[0]				= 0;
 	strcpy(client.nick, "?????????");
 
 	/* Setup terminal ios */
