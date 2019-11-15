@@ -25,8 +25,6 @@ int chat_command_handle(struct client *client, char *cmd_buf)
 
 	/* Set the nick of user */
 	req.src = client;
-	if (client->is_username_set)
-		req.dest = client->pair;
 
 	/* 2. Prepare the request struct */
 	if (chat_command_prepare(&req, cmd_buf) == -1)
@@ -124,12 +122,16 @@ int	chat_request_send(struct client *client, struct request *req)
 static int prepare_request_for_message(struct request *req,
 		const char *cmd_bufp)
 {
+	 /* @TODO implement message handling if user tries to send message 
+	  * without using '/msg' command */
+	return 0;
+
 	/* If user is not associated with other user then he/she
 	 * can not send message without using /msg command */
-	if (!req->dest) {
-		chat_info_printline("Can't send message, you are not associated");
-		return -1;
-	}
+	/* TODO check for associated channel. I am no longer allowing user to
+	 * associate with other user, instead allowing user to associate with
+	 * channel */
+
 	req->irc_cmd = commands[command_message_get_index()].irc_cmd;
 	req->body = strdup(cmd_bufp);
 	return 0;
@@ -415,7 +417,6 @@ int chat_response_handle(struct client *client)
 	}
 
 	/*
-	fprintf(stderr, "dest: %s\n", req.dest);
 	fprintf(stderr, "irc_cmd: %s\n", req.irc_cmd);
 	for (int i = 0; req.params[i]; i++)
 		fprintf(stderr, "param[%d]: %s\n", i + 1, req.params[i]);
