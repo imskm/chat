@@ -118,7 +118,7 @@ int	command_handle_msg(struct request *req, const char *cmd_buf)
 		goto cleanup;
 	}
 
-	request_dest_set(req, parts[0]); /* Set the receiver */
+	request_param_set(req, parts[0]); /* Set the receiver */
 	request_body_set(req, cmd_cpp); /* Setting message as body in req */
 
 cleanup:

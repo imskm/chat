@@ -49,8 +49,8 @@ void prepare_error_message(struct request *req, const struct response *res,
 	const char *p = NULL;
 
 	p = res->desc;
-	if (strstr(p, "<nick>") != NULL) {
-		req->body = str_replace(p, "<nick>", req->dest);
+	if (strstr(p, "<nick>") != NULL && req->params[0] != NULL) {
+		req->body = str_replace(p, "<nick>", req->parms[0]);
 		p = req->body;
 	}
 
@@ -129,32 +129,10 @@ int response_send_rpl_join(struct request *req, struct collection *col)
 	int i;
 	unsigned char buf[BUFFSIZE];
 
-	/* TODO This is non-standard, for now I am joining users and not channel
-	 * 1. Delete all this code and implement the IRC standard */
-	/* If target nick does not exist then response error and return */
-	if ((i = chat_find_nick(col->clients, req->dest)) == -1) {
-		req->status = ERR_NOSUCHNICK;
-		return response_send_err(req, col);
-	} else if (i == col->index) {
-		sprintf(buf, "%d %s :You can't associate your self", RPL_NONE,
-				req->src->nick);
-		return response_send(req->src->fd, buf, strlen(buf));
-	}
+	/* @TODO Previous implementation was non-standard.
+	 * Implement channel joining here */
 
-	col->clients->clients[col->index]->partner = col->clients->clients[i];
-	col->clients->clients[i]->partner = col->clients->clients[col->index];
-	col->clients->clients[col->index]->is_assoc = true;
-
-	/* Notify the connected client */
-	sprintf(buf, "%d %s :<%s> has requested association", RPL_NONE,
-			req->src->nick, req->src->nick);
-	response_send(col->clients->clients[col->index]->partner->fd, buf,
-			strlen(buf));
-
-	sprintf(buf, "%d %s :You have joined successfully!", RPL_NONE,
-			req->src->nick);
-
-	return response_send(req->src->fd, buf, strlen(buf));
+	return 0;
 }
 
 int response_send_rpl_names(struct request *req, struct collection *col)

@@ -42,18 +42,8 @@ int request_orig_set(struct request *req, const char *orig)
 	return 0;
 }
 
-int request_dest_set(struct request *req, const char *dest)
-{
-	if (dest == NULL)
-		return -1;
-	req->dest = strdup(dest);
-
-	return 0;
-}
-
 int request_cleanup(struct request *req)
 {
-	if (req->dest) 		free((void *)req->dest);
 	if (req->orig) 		free((void *)req->orig);
 	/* req->nick should not be freed */
 	for (int i = 0; req->params[i] && i < REQUEST_MAX_PARAMS; i++) {
@@ -62,7 +52,6 @@ int request_cleanup(struct request *req)
 	}
 	if (req->body) free(req->body);
 
-	req->dest = NULL;
 	req->orig = NULL;
 	req->body = NULL;
 
@@ -171,33 +160,10 @@ int request_handle(struct request *req, struct collection *collection)
 
 int request_handle_join(struct request *req, struct collection *collection)
 {
-	int n, ret = 0;
-	char *parts[4] = {0}, *p;
 
-	p = strdup(collection->buf);
+	/* TODO Implement channel joining */
 
-	if ((n = str_split(p, " ", parts, 4)) != 3) {
-		req->status = ERR_NEEDMOREPARAMS;
-		goto cleanup;
-	}
-	request_dest_set(req, parts[2]);
-
-	/* TODO this function must only deal with channel joining and not user
-	 * joining with other user. But for now I am implementing user chatting */
-
-	/* If argument for JOIN command is not given then return error */
-	if (chat_validate_nick(parts[2]) == false) {
-		req->status = ERR_NOSUCHNICK;
-		goto cleanup;
-	}
-
-	request_dest_set(req, parts[2]);
-	req->status = RPL_TOPIC;
-
-cleanup:
-	free(p);
-
-	return ret;
+	return 0;
 }
 
 int request_handle_msg(struct request *req, struct collection *collection)
