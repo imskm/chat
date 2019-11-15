@@ -390,6 +390,18 @@ Note: :<prefix> is required in case of server communicating with other server an
 * Server sends fatal error if an invalid command is sent by client
 
 
+16. Implement `nick` command 					-- done
+17. Implement `names` command					-- done
+18. Implement `join` command					-- done
+19. Implement `msg` command						-- done
+20. Implement `quit` command
+21. Fix server responds empty NAMES reply which it should not. Server should send RPL\_ENDOFNAMES when no user is online
+24. Fix the reply protocol, current implementatino is missing prefix. See http://chi.cs.uchicago.edu/chirc/irc.html
+25. When an IRC client connects to an IRC server, it must first register its connection. This is done by sending two messages: NICK and USER.
+26. When new client successfully registes him/her self then send welcome message to him/her.
+27. Fix bug when quitting client server hit with SIGSEGV.
+
+
 # Message commands for all requests
 * Set nick name
 * Show all online nick names including the client him self
@@ -572,12 +584,9 @@ other replies will be implemented in future, I don't need it for now
 ```
 User command
 ```
-/join <nick>					; user can only be associated one user or channel at any given time
-								; join command is used to connect to user and channel. If parameter
-								; starts with '#' (hash) then client want to connect to channel else
-								; user
+/part <receiver>				; disassociate from given receiver (nick or channel)
 ```
-* Quit user
+## Quit user
    Command: QUIT
 Parameters: [<Quit message>]
 A client session is ended with a quit message.
