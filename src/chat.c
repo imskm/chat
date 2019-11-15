@@ -193,14 +193,7 @@ int chat_request_handle(struct collection *collection, fd_set *set)
 		return -1;
 	}
 	/* Leave it here for DEBUGGING
-	fprintf(stderr, "Origin : %s\n", req.orig);
-	fprintf(stderr, "Command: %s\n", req.irc_cmd);
-	fprintf(stderr, "Params :\n");
-	for (int i = 0; req.params[i] != NULL; i++)
-		fprintf(stderr, "      %d: %s\n", i + 1, req.params[i]);
-	if (req.body)
-		fprintf(stderr, "Body   : %s\n", req.body);
-	return 0;
+	request_dump(&req);
 	*/
 
 	/* @Note: Developer's note: all the error checking must be done in
