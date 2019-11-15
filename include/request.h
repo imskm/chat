@@ -16,6 +16,7 @@ struct request {
 };
 
 
+void request_dump(struct request *req);
 int request_param_set(struct request *req, char *param);
 int request_param_get(struct request *req, int index);
 int request_cleanup(struct request *req);

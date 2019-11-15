@@ -5,6 +5,19 @@
 
 #include "chat.h"
 
+void request_dump(struct request *req)
+{
+	fprintf(stderr, "Origin : %s\n", req->orig);
+	fprintf(stderr, "Command: %s\n", req->irc_cmd);
+	fprintf(stderr, "Params :\n");
+
+	for (int i = 0; req->params[i] != NULL; i++)
+		fprintf(stderr, "      %d: %s\n", i + 1, req->params[i]);
+
+	if (req->body)
+		fprintf(stderr, "Body   : %s\n", req->body);
+}
+
 int request_param_set(struct request *req, char *param)
 {
 	for (int i = 0; i < REQUEST_MAX_PARAMS; i++) {
