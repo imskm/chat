@@ -106,7 +106,7 @@ int	chat_request_send(struct client *client, struct request *req)
 	}
 
 	/* Add CRLF at the end */
-	strcat(buf, " \r\n");
+	strcat(buf, "\r\n");
 
 	//fprintf(stderr, "%s\n", buf);
 	chat_info_printline(buf);

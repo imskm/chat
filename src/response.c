@@ -50,7 +50,7 @@ void prepare_error_message(struct request *req, const struct response *res,
 
 	p = res->desc;
 	if (strstr(p, "<nick>") != NULL && req->params[0] != NULL) {
-		req->body = str_replace(p, "<nick>", req->parms[0]);
+		req->body = str_replace(p, "<nick>", req->params[0]);
 		p = req->body;
 	}
 
@@ -126,9 +126,6 @@ int response_send_rpl_none(struct request *req, struct collection *col)
 
 int response_send_rpl_join(struct request *req, struct collection *col)
 {
-	int i;
-	unsigned char buf[BUFFSIZE];
-
 	/* @TODO Previous implementation was non-standard.
 	 * Implement channel joining here */
 
