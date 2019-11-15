@@ -109,7 +109,6 @@ int	chat_request_send(struct client *client, struct request *req)
 	strcat(buf, "\r\n");
 
 	//fprintf(stderr, "%s\n", buf);
-	chat_info_printline(buf);
 
 	if (write(client->fd, buf, strlen(buf)) == -1) {
 		chat_info_printline("chat_request_send: write error");
