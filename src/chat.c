@@ -95,12 +95,6 @@ int	chat_request_send(struct client *client, struct request *req)
 
 	sprintf(buf, ":%s %s", req->src->nick, req->irc_cmd);
 
-	/* Set destination (if any) */
-	if (req->dest) {
-		sprintf(tmp, " %s", req->dest);
-		strcat(buf, tmp);
-	}
-
 	/* Set params */
 	for (int i = 0; req->params[i] != NULL; i++) {
 		sprintf(tmp, " %s", req->params[i]);
