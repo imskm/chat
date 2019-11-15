@@ -207,12 +207,31 @@ int chat_request_handle(struct collection *collection, fd_set *set)
 	return 0;
 	*/
 
+	/* @Note: Developer's note: all the error checking must be done in
+	 *        request_handle_**() handler function and handler must set
+	 *        proper error code in req struct in case of error and must
+	 *        return -1. For example see request_handle_nick() function.
+	 *        response handler response_handle_**() must not perform error
+	 *        check because all the error check is done in request handler.
+	 *        Response handler always gets correct req struct and it must
+	 *        only focus on handling response and not validation check etc.
+	 *
+	 * Error: If you want to handle the error by your self then register your
+	 *        error handler in responses struct array in rescodes.h file.
+	 *        Otherwise you just leave that member as NULL, and default error
+	 *        handler will take care of that. For this default handler to work
+	 *        properly you must set correct error code in status member of
+	 *        request struct. */
+
 	/* 2. Prepare the request struct. If error occurs then handle the error
 	 *    with error response function group */
 	if (chat_request_prepare(&req, collection) == -1) {
 		/* Send error reply to request sender */
 		int err_i = chat_calc_reply_index(req.status);
-		responses[err_i].handle(&req, collection); /* Error handler is called */
+		if (responses[err_i].handle != NULL) /* Error handler is called */
+			responses[err_i].handle(&req, collection); 
+		else
+			response_send_err(&req, collection);
 		return -1;
 	}
 
