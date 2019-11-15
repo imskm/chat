@@ -195,7 +195,7 @@ int request_handle_msg(struct request *req, struct collection *collection)
 
 	/* If provided new nick does not exist then return error */
 	if (chat_find_nick(collection->clients, req->params[0]) == -1) {
-		req->status = ERR_NICKNAMEINUSE;
+		req->status = ERR_NOSUCHNICK;
 		return -1;
 	}
 
