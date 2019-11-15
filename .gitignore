@@ -1,5 +1,10 @@
 client
 server
+filter
+new
+TODO.md
+obj/
 
 .*
 !.gitignore
+
