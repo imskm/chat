@@ -93,6 +93,7 @@ int 	chat_client_session_close(struct clients *clients, int index);
 #include "chat_replies.h"
 
 bool 	chat_validate_nick(const char *nick);
+bool    chat_validate_channelname(const char *channelname);
 int		chat_find_nick(struct clients *clients, const char *nick);
 char	*chat_serialize_nick(struct clients *clients, char *buf, size_t size);
 

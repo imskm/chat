@@ -353,6 +353,47 @@ out:
 	return ret;
 }
 
+
+bool chat_validate_channelname(const char *channelname)
+{
+	char regexstr[32];
+	int len;
+	regex_t regex = {0};
+	bool ret = false;
+	char tmp[256];
+	static bool is_regex_compiled = false;
+
+	/* Channel validation */
+	if ((len = strlen(channelname)) > CHANNELNAME_MAX_LEN) {
+		sprintf(tmp, "Invalid Channel Name : max %d characters allowed", CHANNELNAME_MAX_LEN);
+		chat_info_printline(tmp);
+		goto out;
+	}
+
+	sprintf(regexstr, "^#[a-zA-Z0-9]{1,%d}$", CHANNELNAME_MAX_LEN);
+
+	if (!is_regex_compiled) {
+		if (regcomp(&regex, regexstr, REG_EXTENDED) != 0) {
+			chat_info_printline("client_validate_username: regcomp error");
+			goto out;
+		}
+		is_regex_compiled = true;
+	}
+
+	if (regexec(&regex, channelname, 0, NULL, 0) == REG_NOMATCH) {
+		chat_info_printline("Invalid Channel Name: Onlye a-Z, A-Z and 0-9 "
+				"characters are allowed");
+		goto out;
+	}
+
+	ret = true;
+
+out:
+	regfree(&regex);
+
+	return ret;
+}
+
 int chat_find_nick(struct clients *clients, const char *nick)
 {
 	for (int i = 0; i < clients->clients_i; i++)
