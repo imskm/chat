@@ -364,13 +364,13 @@ bool chat_validate_channelname(const char *channelname)
 	static bool is_regex_compiled = false;
 
 	/* Channel validation */
-	if ((len = strlen(channelname)) > CHANNELNAME_MAX_LEN) {
-		sprintf(tmp, "Invalid Channel Name : max %d characters allowed", CHANNELNAME_MAX_LEN);
+	if ((len = strlen(channelname)) > CHANNEL_NAME_MAX_LEN) {
+		sprintf(tmp, "Invalid Channel Name : max %d characters allowed", CHANNEL_NAME_MAX_LEN);
 		chat_info_printline(tmp);
 		goto out;
 	}
 
-	sprintf(regexstr, "^#[a-zA-Z0-9]{1,%d}$", CHANNELNAME_MAX_LEN);
+	sprintf(regexstr, "^#[a-zA-Z0-9]{1,%d}$", CHANNEL_NAME_MAX_LEN);
 
 	if (!is_regex_compiled) {
 		if (regcomp(&regex, regexstr, REG_EXTENDED) != 0) {
@@ -398,6 +398,15 @@ int chat_find_nick(struct clients *clients, const char *nick)
 {
 	for (int i = 0; i < clients->clients_i; i++)
 		if (clients->clients[i] && strcmp(clients->clients[i]->nick, nick) == 0)
+			return i;
+
+	return -1;
+}
+
+int chat_find_channelname(struct channels *channels, const char *channelname)
+{
+	for (int i = 0; i < channels->nchannels; i++)
+		if (channels->channels[i] && strcmp(channels->channels[i]->channelname, channelname) == 0)
 			return i;
 
 	return -1;

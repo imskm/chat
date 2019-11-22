@@ -3,6 +3,8 @@
 
 #include <stdbool.h>
 
+#include "chat.h"
+
 #define CHANNEL_NAME_MAX_LEN   9
 #define CHANNEL_TOPIC_MAX_LEN  20
 #define CHANNEL_KEY_MAX_LEN    10
@@ -10,10 +12,11 @@
 #define CHANNEL_MAX_LEN  10
 
 struct channel {
-	char           channel_name[CHANNEL_NAME_MAX_LEN + 1];
+	char           channelname[CHANNEL_NAME_MAX_LEN + 1];
 	char           topic[CHANNEL_TOPIC_MAX_LEN];
 	char           key[CHANNEL_KEY_MAX_LEN];
 	struct client  *connected_users[CHANNEL_USERS_MAX_LEN];
+	int            operator_index;
 	int            total_connected_users;
 	unsigned int   attr;
 
@@ -24,7 +27,7 @@ struct channels {
 	int            nchannels;
 };
 
-int channel_create(struct channels *channels);
+int channel_create(struct request *req, struct collection *collection);
 int channel_delete(struct channels *channels, int index);
 
 int channel_attr_set(struct channel *channel, unsigned int attr);

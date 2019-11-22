@@ -5,6 +5,8 @@
 #include <libsocket.h>
 #include <str.h>
 
+
+
 #define PEER_TERMINATED 0x10
 
 #define CLIENT_QUIT   -001
@@ -41,6 +43,7 @@ struct clients {
  * of these data to perform required action */
 struct collection {
 	struct clients *clients;
+	struct channels *channels;
 	size_t index;
 	const char *buf;
 };
@@ -48,6 +51,7 @@ struct collection {
 #include "request.h"
 #include "command.h"
 #include "response.h"
+#include "channel.h"
 
 int		server_new_client(struct clients *clients, int sockfd);
 int		server_del_client(struct clients *clients, int index);
@@ -95,6 +99,7 @@ int 	chat_client_session_close(struct clients *clients, int index);
 bool 	chat_validate_nick(const char *nick);
 bool    chat_validate_channelname(const char *channelname);
 int		chat_find_nick(struct clients *clients, const char *nick);
+int		chat_find_channelname(struct channels *channels, const char *channelname);
 char	*chat_serialize_nick(struct clients *clients, char *buf, size_t size);
 
 int 	chat_render_line(struct request *req, const char *buf, unsigned char *line);

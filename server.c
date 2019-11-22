@@ -10,9 +10,11 @@ int main(int argc, char *argv[])
 	socklen_t clientlen;
 	fd_set rset, allset;
 	struct clients clients = {0};
+	struct channels channels = {0};
 	struct collection collection = {0};
 
 	collection.clients = &clients;
+	collection.channels = &channels;
 
 	listenfd = Socket(AF_INET, SOCK_STREAM, 0);
 

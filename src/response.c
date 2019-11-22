@@ -129,7 +129,16 @@ int response_send_rpl_join(struct request *req, struct collection *col)
 	/* @TODO Previous implementation was non-standard.
 	 * Implement channel joining here */
 
-	return 0;
+	unsigned char buf[BUFFSIZE];
+	char *msg;
+
+	if (req->status == RPL_NOTOPIC) {
+		msg = responses[chat_calc_reply_index(req->status)].desc;
+	}
+
+	sprintf(buf, "%d %s :%s", req->status, req->src->nick, msg);
+
+	return response_send(req->src->fd, buf, strlen(buf));
 }
 
 int response_send_rpl_names(struct request *req, struct collection *col)

@@ -173,11 +173,75 @@ int request_handle(struct request *req, struct collection *collection)
 
 int request_handle_join(struct request *req, struct collection *collection)
 {
+	int index;
+	// char buf[BUFFSIZE];
 
-	/* TODO Implement channel joining */
+	if (chat_validate_channelname(req->params[0]) == false) {
+		req->status = ERR_NOSUCHCHANNEL;
+		return -1;
+	}
+
+	index = chat_find_channelname(collection->channels, req->params[0]);
+
+	if ( index == -1) {
+		// Check Oveflow of Channnels
+
+		if (collection->channels->nchannels == CHANNEL_MAX_LEN) {
+			req->status = ERR_TOOMANYCHANNELS;
+			return -1;
+		}
+
+		// TODO : Create new channnel
+		channel_create(req, collection);
+
+	}
+
+	else  {
+		// TODO : check overflow of member
+		if(collection->channels->channels[index]->total_connected_users != CHANNEL_USERS_MAX_LEN) {
+			req->status = ERR_CHANNELISFULL;
+			return -1;
+		}
+	}
+	req->status = RPL_NOTOPIC;
 
 	return 0;
 }
+
+int request_handle_nick(struct request *req, struct collection *collection)
+{
+	char buf[BUFFSIZE];
+
+	/* If argument for JOIN command is not given then return error */
+	if (req->params[0] == NULL) {
+		req->status = ERR_NONICKNAMEGIVEN;
+		return -1;
+	}
+
+	/* If given nick fails in validation then return error */
+	if (chat_validate_nick(req->params[0]) == false) {
+		req->status = ERR_ERRONEUSNICKNAME;
+		return -1;
+	}
+
+	/* If provided new nick exist then return error */
+	if (chat_find_nick(collection->clients, req->params[0]) != -1) {
+		req->status = ERR_NICKNAMEINUSE;
+		return -1;
+	}
+
+	/* Since all the check passed therefore nick is assigned to this client */
+	strcpy(collection->clients->clients[collection->index]->nick,
+		req->params[0]);
+	sprintf(buf, "Welcome to the Internet Relay Network %s", req->src->nick);
+
+	request_body_set(req, buf);
+	req->status = RPL_WELCOME;
+	/* TODO Notify to other users about nick change */
+
+	return 0;
+}
+
 
 int request_handle_msg(struct request *req, struct collection *collection)
 {
@@ -213,40 +277,6 @@ int request_handle_names(struct request *req, struct collection *collection)
 {
 	/* request for NAMES doesn't need any operation here */
 	req->status = RPL_NAMREPLY;
-
-	return 0;
-}
-
-int request_handle_nick(struct request *req, struct collection *collection)
-{
-	char buf[BUFFSIZE];
-
-	/* If argument for JOIN command is not given then return error */
-	if (req->params[0] == NULL) {
-		req->status = ERR_NONICKNAMEGIVEN;
-		return -1;
-	}
-
-	/* If given nick fails in validation then return error */
-	if (chat_validate_nick(req->params[0]) == false) {
-		req->status = ERR_ERRONEUSNICKNAME;
-		return -1;
-	}
-
-	/* If provided new nick exist then return error */
-	if (chat_find_nick(collection->clients, req->params[0]) != -1) {
-		req->status = ERR_NICKNAMEINUSE;
-		return -1;
-	}
-
-	/* Since all the check passed therefore nick is assigned to this client */
-	strcpy(collection->clients->clients[collection->index]->nick,
-		req->params[0]);
-	sprintf(buf, "Welcome to the Internet Relay Network %s", req->src->nick);
-
-	request_body_set(req, buf);
-	req->status = RPL_WELCOME;
-	/* TODO Notify to other users about nick change */
 
 	return 0;
 }

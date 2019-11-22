@@ -130,7 +130,7 @@ const struct response responses[] = {
 	{328, NULL, NULL}, /* unsupported */
 	{329, NULL, NULL}, /* unsupported */
 	{330, NULL, NULL}, /* unsupported */
-	{331, NULL, NULL},
+	{331, "<channel> :No topic is set",                 response_send_rpl_join},
 	{332, "<channel> :<topic>",                         response_send_rpl_join},
 	{333, NULL, NULL}, /* unsupported */
 	{334, NULL, NULL}, /* unsupported */

@@ -85,48 +85,9 @@ int	command_handle_join(struct request *req, const char *cmd_buf)
 		goto cleanup;
 	}
 
+	request_param_set(req, parts[0]);
+
 	ret = 0;
-
-cleanup:
-	free(cmd_cp);
-	if (parts[0]) free(parts[0]);
-
-	return ret;
-}
-
-int	command_handle_msg(struct request *req, const char *cmd_buf)
-{
-	int 		argc, ret = 0;
-	char 		*cmd_cp, *cmd_cpp, *parts[2] = {0};
-
-	if ((cmd_cp = strdup(cmd_buf)) == NULL) {
-		fprintf(stderr, "[!] command error\n");
-		return -1;
-	}
-
-	str_ltrim(cmd_cp);
-	cmd_cpp = cmd_cp; 
-
-	/* Store receiver in params */
-	if ((argc = extract_fill_params(&cmd_cpp, parts, 2)) != 1) {
-		fprintf(stderr,
-				"[!] Invalid %s command, /%s <receiver> <message>\n",
-				req->cmd, req->cmd);
-		ret = -1;
-		goto cleanup;
-	}
-
-	/* If cmd_cpp is NULL then no message was given, return error */
-	if (cmd_cpp == NULL) {
-		fprintf(stderr,
-				"[!] No message given, /%s <receiver> <message>\n",
-				req->cmd);
-		ret = -1;
-		goto cleanup;
-	}
-
-	request_dest_set(req, parts[0]); /* Set the receiver */
-	request_body_set(req, cmd_cpp); /* Setting message as body in req */
 
 cleanup:
 	free(cmd_cp);
