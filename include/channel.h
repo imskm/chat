@@ -22,20 +22,20 @@ struct channel {
 struct channels {
 	struct channel *channels[CHANNEL_MAX_LEN];
 	int            nchannels;
-}
+};
 
 int channel_create(struct channels *channels);
 int channel_delete(struct channels *channels, int index);
 
-int channel_attr_set(struct *channel, unsigned int attr);
-int channel_attr_unset(struct *channel, unsigned int attr);
-bool channel_attr_isset(struct *channel, unsigned int attr);
+int channel_attr_set(struct channel *channel, unsigned int attr);
+int channel_attr_unset(struct channel *channel, unsigned int attr);
+bool channel_attr_isset(struct channel *channel, unsigned int attr);
 
-void channel_topic_set(struct *channel, const char *topic);
-bool channel_topic_isset(struct *channel);
-void channel_topic_unset(struct *channel);
+void channel_topic_set(struct channel *channel, const char *topic);
+bool channel_topic_isset(struct channel *channel);
+void channel_topic_unset(struct channel *channel);
 
-int channel_key_set(struct *channel, const char *key);
+int channel_key_set(struct channel *channel, const char *key);
 
 
 
