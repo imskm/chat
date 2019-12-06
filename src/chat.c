@@ -214,6 +214,7 @@ int chat_request_handle(struct collection *collection, fd_set *set)
 	/* 2. Prepare the request struct. If error occurs then handle the error
 	 *    with error response function group */
 	if (chat_request_prepare(&req, collection) == -1) {
+		request_dump(&req);
 		/* Send error reply to request sender */
 		int err_i = chat_calc_reply_index(req.status);
 		if (responses[err_i].handle != NULL) /* Error handler is called */
@@ -222,6 +223,8 @@ int chat_request_handle(struct collection *collection, fd_set *set)
 			response_send_err(&req, collection);
 		return -1;
 	}
+
+	request_dump(&req);
 
 	/* If request is for nick then handle it here because RPL_WELCOME
 	 * does not exist in response array */
@@ -361,7 +364,6 @@ bool chat_validate_channelname(const char *channelname)
 	regex_t regex = {0};
 	bool ret = false;
 	char tmp[256];
-	static bool is_regex_compiled = false;
 
 	/* Channel validation */
 	if ((len = strlen(channelname)) > CHANNEL_NAME_MAX_LEN) {
@@ -372,12 +374,9 @@ bool chat_validate_channelname(const char *channelname)
 
 	sprintf(regexstr, "^#[a-zA-Z0-9]{1,%d}$", CHANNEL_NAME_MAX_LEN);
 
-	if (!is_regex_compiled) {
-		if (regcomp(&regex, regexstr, REG_EXTENDED) != 0) {
-			chat_info_printline("client_validate_username: regcomp error");
-			goto out;
-		}
-		is_regex_compiled = true;
+	if (regcomp(&regex, regexstr, REG_EXTENDED) != 0) {
+		chat_info_printline("client_validate_username: regcomp error");
+		goto out;
 	}
 
 	if (regexec(&regex, channelname, 0, NULL, 0) == REG_NOMATCH) {

@@ -183,27 +183,25 @@ int request_handle_join(struct request *req, struct collection *collection)
 
 	index = chat_find_channelname(collection->channels, req->params[0]);
 
-	if ( index == -1) {
-		// Check Oveflow of Channnels
-
-		if (collection->channels->nchannels == CHANNEL_MAX_LEN) {
-			req->status = ERR_TOOMANYCHANNELS;
-			return -1;
-		}
-
-		// TODO : Create new channnel
-		channel_create(req, collection);
-
-	}
-
-	else  {
-		// TODO : check overflow of member
-		if(collection->channels->channels[index]->total_connected_users != CHANNEL_USERS_MAX_LEN) {
+	if (index != -1) {
+		if(collection->channels->channels[index]->total_connected_users == CHANNEL_USERS_MAX_LEN) {
 			req->status = ERR_CHANNELISFULL;
 			return -1;
 		}
+		// add new user to channel
+		collection->channels->channels[index]->connected_users[collection->channels->channels[index]->total_connected_users++] = req->src;
+		req->status = RPL_TOPIC;
+
+	} else if (collection->channels->nchannels == CHANNEL_MAX_LEN) {
+
+		req->status = ERR_TOOMANYCHANNELS;
+		return -1;
+	} else {
+		
+		channel_create(req, collection);
+		req->status = RPL_NOTOPIC;
 	}
-	req->status = RPL_NOTOPIC;
+
 
 	return 0;
 }

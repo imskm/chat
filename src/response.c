@@ -131,14 +131,20 @@ int response_send_rpl_join(struct request *req, struct collection *col)
 
 	unsigned char buf[BUFFSIZE];
 	char *msg;
+	int index;
+	request_dump(req);
+	printf("Status: %d\n", req->status);
 
 	if (req->status == RPL_NOTOPIC) {
 		msg = responses[chat_calc_reply_index(req->status)].desc;
+	} else if (req->status == RPL_TOPIC) {
+		index = chat_find_channelname(col->channels, req->params[0]);
+		msg = col->channels->channels[index]->topic;
 	}
-
 	sprintf(buf, "%d %s :%s", req->status, req->src->nick, msg);
+	response_send(req->src->fd, buf, strlen(buf));
 
-	return response_send(req->src->fd, buf, strlen(buf));
+	return response_send_rpl_names(req, col);
 }
 
 int response_send_rpl_names(struct request *req, struct collection *col)
