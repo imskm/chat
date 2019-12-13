@@ -10,6 +10,8 @@
 #include "command.h"
 #include "str.h"
 
+#define MAX_CHANNEL_CONNECTION_ALLOWED 5
+
 struct text_view {
 	size_t index;
 	unsigned char buf[BUFFSIZE];
@@ -21,6 +23,7 @@ void client_render_cmdline(char *status_line, char *prompt, char *typed_cmd);
 bool is_quit = false;
 
 static struct client client = {0};
+char *conn_channels[MAX_CHANNEL_CONNECTION_ALLOWED];
 
 int main(int argc, char *argv[])
 {

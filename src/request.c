@@ -188,7 +188,7 @@ int request_handle_join(struct request *req, struct collection *collection)
 			req->status = ERR_CHANNELISFULL;
 			return -1;
 		}
-		// add new user to channel
+		// requset is for joining channel, so add new user to channel
 		collection->channels->channels[index]->connected_users[collection->channels->channels[index]->total_connected_users++] = req->src;
 		req->status = RPL_TOPIC;
 
@@ -197,7 +197,7 @@ int request_handle_join(struct request *req, struct collection *collection)
 		req->status = ERR_TOOMANYCHANNELS;
 		return -1;
 	} else {
-		
+		// requset is for channel creation, so create channel
 		channel_create(req, collection);
 		req->status = RPL_NOTOPIC;
 	}
