@@ -5,6 +5,19 @@
 
 #include "chat.h"
 
+void request_dump(struct request *req)
+{
+	fprintf(stderr, "Origin : %s\n", req->orig);
+	fprintf(stderr, "Command: %s\n", req->irc_cmd);
+	fprintf(stderr, "Params :\n");
+
+	for (int i = 0; req->params[i] != NULL; i++)
+		fprintf(stderr, "      %d: %s\n", i + 1, req->params[i]);
+
+	if (req->body)
+		fprintf(stderr, "Body   : %s\n", req->body);
+}
+
 int request_param_set(struct request *req, char *param)
 {
 	for (int i = 0; i < REQUEST_MAX_PARAMS; i++) {
@@ -42,18 +55,8 @@ int request_orig_set(struct request *req, const char *orig)
 	return 0;
 }
 
-int request_dest_set(struct request *req, const char *dest)
-{
-	if (dest == NULL)
-		return -1;
-	req->dest = strdup(dest);
-
-	return 0;
-}
-
 int request_cleanup(struct request *req)
 {
-	if (req->dest) 		free((void *)req->dest);
 	if (req->orig) 		free((void *)req->orig);
 	/* req->nick should not be freed */
 	for (int i = 0; req->params[i] && i < REQUEST_MAX_PARAMS; i++) {
@@ -62,7 +65,6 @@ int request_cleanup(struct request *req)
 	}
 	if (req->body) free(req->body);
 
-	req->dest = NULL;
 	req->orig = NULL;
 	req->body = NULL;
 
@@ -171,57 +173,35 @@ int request_handle(struct request *req, struct collection *collection)
 
 int request_handle_join(struct request *req, struct collection *collection)
 {
-	int n, ret = 0;
-	char *parts[4] = {0}, *p;
+	int index;
+	// char buf[BUFFSIZE];
 
-	p = strdup(collection->buf);
-
-	if ((n = str_split(p, " ", parts, 4)) != 3) {
-		req->status = ERR_NEEDMOREPARAMS;
-		goto cleanup;
-	}
-	request_dest_set(req, parts[2]);
-
-	/* TODO this function must only deal with channel joining and not user
-	 * joining with other user. But for now I am implementing user chatting */
-
-	/* If argument for JOIN command is not given then return error */
-	if (chat_validate_nick(parts[2]) == false) {
-		req->status = ERR_NOSUCHNICK;
-		goto cleanup;
-	}
-
-	request_dest_set(req, parts[2]);
-	req->status = RPL_TOPIC;
-
-cleanup:
-	free(p);
-
-	return ret;
-}
-
-int request_handle_msg(struct request *req, struct collection *collection)
-{
-	/* If recipient is missing then set proper error and return */
-	if (req->params[0] == NULL) {
-		req->status = ERR_NORECIPIENT;
+	if (chat_validate_channelname(req->params[0]) == false) {
+		req->status = ERR_NOSUCHCHANNEL;
 		return -1;
 	}
 
-	/* If empty message is given the return error and set status */
-	if (req->body == NULL) {
-		req->status = ERR_NEEDMOREPARAMS; /* Should be Message body empty */
+	index = chat_find_channelname(collection->channels, req->params[0]);
+
+	if (index != -1) {
+		if(collection->channels->channels[index]->total_connected_users == CHANNEL_USERS_MAX_LEN) {
+			req->status = ERR_CHANNELISFULL;
+			return -1;
+		}
+		// requset is for joining channel, so add new user to channel
+		collection->channels->channels[index]->connected_users[collection->channels->channels[index]->total_connected_users++] = req->src;
+		req->status = RPL_TOPIC;
+
+	} else if (collection->channels->nchannels == CHANNEL_MAX_LEN) {
+
+		req->status = ERR_TOOMANYCHANNELS;
 		return -1;
+	} else {
+		// requset is for channel creation, so create channel
+		channel_create(req, collection);
+		req->status = RPL_NOTOPIC;
 	}
-	req->status = 0; /* Message status code */
 
-	return 0;
-}
-
-int request_handle_names(struct request *req, struct collection *collection)
-{
-	/* request for NAMES doesn't need any operation here */
-	req->status = RPL_NAMREPLY;
 
 	return 0;
 }
@@ -256,6 +236,45 @@ int request_handle_nick(struct request *req, struct collection *collection)
 	request_body_set(req, buf);
 	req->status = RPL_WELCOME;
 	/* TODO Notify to other users about nick change */
+
+	return 0;
+}
+
+
+int request_handle_msg(struct request *req, struct collection *collection)
+{
+	/* If recipient is missing then set proper error and return */
+	if (req->params[0] == NULL) {
+		req->status = ERR_NORECIPIENT;
+		return -1;
+	}
+
+	/* If given nick fails in validation then return error */
+	if (chat_validate_nick(req->params[0]) == false) {
+		req->status = ERR_ERRONEUSNICKNAME;
+		return -1;
+	}
+
+	/* If provided new nick does not exist then return error */
+	if (chat_find_nick(collection->clients, req->params[0]) == -1) {
+		req->status = ERR_NOSUCHNICK;
+		return -1;
+	}
+
+	/* If empty message is given the return error and set status */
+	if (req->body == NULL) {
+		req->status = ERR_NEEDMOREPARAMS; /* Should be Message body empty */
+		return -1;
+	}
+	req->status = 0; /* Message status code */
+
+	return 0;
+}
+
+int request_handle_names(struct request *req, struct collection *collection)
+{
+	/* request for NAMES doesn't need any operation here */
+	req->status = RPL_NAMREPLY;
 
 	return 0;
 }

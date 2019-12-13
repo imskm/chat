@@ -49,8 +49,8 @@ void prepare_error_message(struct request *req, const struct response *res,
 	const char *p = NULL;
 
 	p = res->desc;
-	if (strstr(p, "<nick>") != NULL) {
-		req->body = str_replace(p, "<nick>", req->dest);
+	if (strstr(p, "<nick>") != NULL && req->params[0] != NULL) {
+		req->body = str_replace(p, "<nick>", req->params[0]);
 		p = req->body;
 	}
 
@@ -85,32 +85,16 @@ int response_send_msg(struct request *req, struct collection *col)
 
 	client = col->clients->clients[col->index];
 
-	/* 1. Check valid nick given for recipient */
-	if (chat_validate_nick(req->dest) == false) {
-		req->status = ERR_ERRONEUSNICKNAME;
-		return response_send_err(req, col);
-	}
+	/* Find recipient */
+	i = chat_find_nick(col->clients, req->params[0]);
+	recipient = col->clients->clients[i];
 
-	/* 2. Check if the message is for associated user, if so then send msg */
-	if (client->is_assoc && strcmp(client->partner->nick, req->dest) == 0) {
-		recipient = client->partner;
-
-	/* 3. Find recipient */
-	} else if ((i = chat_find_nick(col->clients, req->dest)) != -1) {
-		recipient = col->clients->clients[i];
-
-	/* Else recipient not found */
-	} else {
-		req->status = ERR_NOSUCHNICK;
-		return response_send_err(req, col);
-	}
-
-	/* 4. Send the message to recipient */
-	sprintf(buf, ":%s %s %s :%s", req->src->nick, req->irc_cmd, req->dest,
+	/* Send the message to recipient */
+	sprintf(buf, ":%s %s %s :%s", req->src->nick, req->irc_cmd, req->params[0],
 			req->body);
 	i = response_send(recipient->fd, buf, strlen(buf));
 
-	/* 5. Send the same message to the sender */
+	/* Send the same message to the sender */
 	sprintf(buf, ":%s %s %s :%s", req->src->nick, req->irc_cmd, req->src->nick,
 			req->body);
 
@@ -142,35 +126,25 @@ int response_send_rpl_none(struct request *req, struct collection *col)
 
 int response_send_rpl_join(struct request *req, struct collection *col)
 {
-	int i;
+	/* @TODO Previous implementation was non-standard.
+	 * Implement channel joining here */
+
 	unsigned char buf[BUFFSIZE];
+	char *msg;
+	int index;
+	request_dump(req);
+	printf("Status: %d\n", req->status);
 
-	/* TODO This is non-standard, for now I am joining users and not channel
-	 * 1. Delete all this code and implement the IRC standard */
-	/* If target nick does not exist then response error and return */
-	if ((i = chat_find_nick(col->clients, req->dest)) == -1) {
-		req->status = ERR_NOSUCHNICK;
-		return response_send_err(req, col);
-	} else if (i == col->index) {
-		sprintf(buf, "%d %s :You can't associate your self", RPL_NONE,
-				req->src->nick);
-		return response_send(req->src->fd, buf, strlen(buf));
+	if (req->status == RPL_NOTOPIC) {
+		msg = responses[chat_calc_reply_index(req->status)].desc;
+	} else if (req->status == RPL_TOPIC) {
+		index = chat_find_channelname(col->channels, req->params[0]);
+		msg = col->channels->channels[index]->topic;
 	}
+	sprintf(buf, "%d %s :%s", req->status, req->src->nick, msg);
+	response_send(req->src->fd, buf, strlen(buf));
 
-	col->clients->clients[col->index]->partner = col->clients->clients[i];
-	col->clients->clients[i]->partner = col->clients->clients[col->index];
-	col->clients->clients[col->index]->is_assoc = true;
-
-	/* Notify the connected client */
-	sprintf(buf, "%d %s :<%s> has requested association", RPL_NONE,
-			req->src->nick, req->src->nick);
-	response_send(col->clients->clients[col->index]->partner->fd, buf,
-			strlen(buf));
-
-	sprintf(buf, "%d %s :You have joined successfully!", RPL_NONE,
-			req->src->nick);
-
-	return response_send(req->src->fd, buf, strlen(buf));
+	return response_send_rpl_names(req, col);
 }
 
 int response_send_rpl_names(struct request *req, struct collection *col)

@@ -25,8 +25,6 @@ int chat_command_handle(struct client *client, char *cmd_buf)
 
 	/* Set the nick of user */
 	req.src = client;
-	if (client->is_username_set)
-		req.dest = client->pair;
 
 	/* 2. Prepare the request struct */
 	if (chat_command_prepare(&req, cmd_buf) == -1)
@@ -95,12 +93,6 @@ int	chat_request_send(struct client *client, struct request *req)
 
 	sprintf(buf, ":%s %s", req->src->nick, req->irc_cmd);
 
-	/* Set destination (if any) */
-	if (req->dest) {
-		sprintf(tmp, " %s", req->dest);
-		strcat(buf, tmp);
-	}
-
 	/* Set params */
 	for (int i = 0; req->params[i] != NULL; i++) {
 		sprintf(tmp, " %s", req->params[i]);
@@ -114,10 +106,9 @@ int	chat_request_send(struct client *client, struct request *req)
 	}
 
 	/* Add CRLF at the end */
-	strcat(buf, " \r\n");
+	strcat(buf, "\r\n");
 
 	//fprintf(stderr, "%s\n", buf);
-	chat_info_printline(buf);
 
 	if (write(client->fd, buf, strlen(buf)) == -1) {
 		chat_info_printline("chat_request_send: write error");
@@ -130,12 +121,16 @@ int	chat_request_send(struct client *client, struct request *req)
 static int prepare_request_for_message(struct request *req,
 		const char *cmd_bufp)
 {
+	 /* @TODO implement message handling if user tries to send message 
+	  * without using '/msg' command */
+	return 0;
+
 	/* If user is not associated with other user then he/she
 	 * can not send message without using /msg command */
-	if (!req->dest) {
-		chat_info_printline("Can't send message, you are not associated");
-		return -1;
-	}
+	/* TODO check for associated channel. I am no longer allowing user to
+	 * associate with other user, instead allowing user to associate with
+	 * channel */
+
 	req->irc_cmd = commands[command_message_get_index()].irc_cmd;
 	req->body = strdup(cmd_bufp);
 	return 0;
@@ -197,29 +192,43 @@ int chat_request_handle(struct collection *collection, fd_set *set)
 		return -1;
 	}
 	/* Leave it here for DEBUGGING
-	fprintf(stderr, "Origin : %s\n", req.orig);
-	fprintf(stderr, "Command: %s\n", req.irc_cmd);
-	fprintf(stderr, "Params :\n");
-	for (int i = 0; req.params[i] != NULL; i++)
-		fprintf(stderr, "      %d: %s\n", i + 1, req.params[i]);
-	if (req.body)
-		fprintf(stderr, "Body   : %s\n", req.body);
-	return 0;
+	request_dump(&req);
 	*/
+
+	/* @Note: Developer's note: all the error checking must be done in
+	 *        request_handle_**() handler function and handler must set
+	 *        proper error code in req struct in case of error and must
+	 *        return -1. For example see request_handle_nick() function.
+	 *        response handler response_handle_**() must not perform error
+	 *        check because all the error check is done in request handler.
+	 *        Response handler always gets correct req struct and it must
+	 *        only focus on handling response and not validation check etc.
+	 *
+	 * Error: If you want to handle the error by your self then register your
+	 *        error handler in responses struct array in rescodes.h file.
+	 *        Otherwise you just leave that member as NULL, and default error
+	 *        handler will take care of that. For this default handler to work
+	 *        properly you must set correct error code in status member of
+	 *        request struct. */
 
 	/* 2. Prepare the request struct. If error occurs then handle the error
 	 *    with error response function group */
 	if (chat_request_prepare(&req, collection) == -1) {
+		request_dump(&req);
 		/* Send error reply to request sender */
 		int err_i = chat_calc_reply_index(req.status);
-		responses[err_i].handle(&req, collection);
+		if (responses[err_i].handle != NULL) /* Error handler is called */
+			responses[err_i].handle(&req, collection); 
+		else
+			response_send_err(&req, collection);
 		return -1;
 	}
+
+	request_dump(&req);
 
 	/* If request is for nick then handle it here because RPL_WELCOME
 	 * does not exist in response array */
 	if (req.status == RPL_WELCOME) {
-		fprintf(stderr, "[*] response_send_rpl_welcome\n");
 		return response_send_rpl_welcome(&req, collection);
 	}
 	
@@ -239,7 +248,6 @@ int chat_request_handle(struct collection *collection, fd_set *set)
 	/* If request is for sending reply to request sender */
 	if (chat_get_request_type(req.status) == REQTYPE_RPL) {
 		int i = chat_calc_reply_index(req.status);
-		fprintf(stderr, "[*] Hanle '%s' response\n", req.irc_cmd);
 		return responses[i].handle(&req, collection);
 	}
 
@@ -348,10 +356,56 @@ out:
 	return ret;
 }
 
+
+bool chat_validate_channelname(const char *channelname)
+{
+	char regexstr[32];
+	int len;
+	regex_t regex = {0};
+	bool ret = false;
+	char tmp[256];
+
+	/* Channel validation */
+	if ((len = strlen(channelname)) > CHANNEL_NAME_MAX_LEN) {
+		sprintf(tmp, "Invalid Channel Name : max %d characters allowed", CHANNEL_NAME_MAX_LEN);
+		chat_info_printline(tmp);
+		goto out;
+	}
+
+	sprintf(regexstr, "^#[a-zA-Z0-9]{1,%d}$", CHANNEL_NAME_MAX_LEN);
+
+	if (regcomp(&regex, regexstr, REG_EXTENDED) != 0) {
+		chat_info_printline("client_validate_username: regcomp error");
+		goto out;
+	}
+
+	if (regexec(&regex, channelname, 0, NULL, 0) == REG_NOMATCH) {
+		chat_info_printline("Invalid Channel Name: Onlye a-Z, A-Z and 0-9 "
+				"characters are allowed");
+		goto out;
+	}
+
+	ret = true;
+
+out:
+	regfree(&regex);
+
+	return ret;
+}
+
 int chat_find_nick(struct clients *clients, const char *nick)
 {
 	for (int i = 0; i < clients->clients_i; i++)
 		if (clients->clients[i] && strcmp(clients->clients[i]->nick, nick) == 0)
+			return i;
+
+	return -1;
+}
+
+int chat_find_channelname(struct channels *channels, const char *channelname)
+{
+	for (int i = 0; i < channels->nchannels; i++)
+		if (channels->channels[i] && strcmp(channels->channels[i]->channelname, channelname) == 0)
 			return i;
 
 	return -1;
@@ -404,7 +458,6 @@ int chat_response_handle(struct client *client)
 	}
 
 	/*
-	fprintf(stderr, "dest: %s\n", req.dest);
 	fprintf(stderr, "irc_cmd: %s\n", req.irc_cmd);
 	for (int i = 0; req.params[i]; i++)
 		fprintf(stderr, "param[%d]: %s\n", i + 1, req.params[i]);

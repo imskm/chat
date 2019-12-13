@@ -72,13 +72,22 @@ int	command_handle_join(struct request *req, const char *cmd_buf)
 	str_ltrim(cmd_cp);
 	cmd_cpp = cmd_cp; /* need to free it after sending request */
 
-	/* 2= 0 param and 1 NULL */
 	if ((argc = extract_fill_params(&cmd_cpp, parts, 2)) != 1) {
-		fprintf(stderr, "[!] Invalid argument, /%s <channel|nick>\n", req->cmd);
+		chat_info_printline("Invalid join command");
 		ret = -1;
 		goto cleanup;
 	}
+
+	// Validate channel name
+	if (!chat_validate_channelname(parts[0])) {
+		chat_info_printline("Invalid channel name");
+		ret = -1;
+		goto cleanup;
+	}
+
 	request_param_set(req, parts[0]);
+
+	ret = 0;
 
 cleanup:
 	free(cmd_cp);
@@ -93,7 +102,7 @@ int	command_handle_msg(struct request *req, const char *cmd_buf)
 	char 		*cmd_cp, *cmd_cpp, *parts[2] = {0};
 
 	if ((cmd_cp = strdup(cmd_buf)) == NULL) {
-		fprintf(stderr, "[!] command error\n");
+		chat_info_printline("command_handle_error");
 		return -1;
 	}
 
@@ -118,7 +127,7 @@ int	command_handle_msg(struct request *req, const char *cmd_buf)
 		goto cleanup;
 	}
 
-	request_dest_set(req, parts[0]); /* Set the receiver */
+	request_param_set(req, parts[0]); /* Set the receiver */
 	request_body_set(req, cmd_cpp); /* Setting message as body in req */
 
 cleanup:

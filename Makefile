@@ -4,7 +4,7 @@ CFLAGS=-Iinclude
 SRCSPATH=src
 OBJSPATH=obj
 OBJS=$(OBJSPATH)/chat.o $(OBJSPATH)/command.o $(OBJSPATH)/request.o \
-	 $(OBJSPATH)/response.o
+	 $(OBJSPATH)/response.o $(OBJSPATH)/channel.o
 LIBS=$(LIBSPATH)/libsocket.o $(LIBSPATH)/str.o $(LIBSPATH)/cursor.o $(OBJS)
 CFLAGS+=-g
 # CFLAGS+=-Wall -Werror -Wmissing-prototypes -Wcast-qual
@@ -14,7 +14,7 @@ CFLAGS+=-Wunused-variable -Wunused-function -Wshadow
 
 all: server client
 
-objects: command chat request response
+objects: command chat request response channel
 
 server: server.c
 	$(CC) -c -o $(OBJSPATH)/chat.o $(SRCSPATH)/chat.c $(CFLAGS)
@@ -36,6 +36,10 @@ request: $(SRCSPATH)/request.c
 
 response: $(SRCSPATH)/response.c
 	$(CC) -c -o $(OBJSPATH)/response.o $(SRCSPATH)/response.c $(CFLAGS)
+
+channel: $(SRCSPATH)/channel.c
+	$(CC) -c -o $(OBJSPATH)/channel.o $(SRCSPATH)/channel.c $(CFLAGS)
+
 
 clean:
 	rm $(OBJSPATH)/*.o
