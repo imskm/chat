@@ -23,3 +23,40 @@ int channel_create(struct request *req, struct collection *collection)
 	return 0;
 }
 
+void channel_dump(struct channel *channel)
+{
+	fprintf(stderr, "Channel Name  : %s\n", channel->channelname);
+	fprintf(stderr, "Channel Topic : %s\n", channel->topic);
+	fprintf(stderr, "Users :\n", channel->topic);
+
+	for (int i = 0; i < channel->total_connected_users; ++i)
+	{
+		if (channel->connected_users[i] == NULL)
+			continue;
+
+		fprintf(stderr, "          %s\n", channel->connected_users[i]);
+	}
+}
+
+int channel_is_user_connected(struct channel *channel, struct client *client)
+{
+	if (channel == NULL || client == NULL)
+		goto out;
+
+	for (int i = 0; i < channel->total_connected_users; ++i)
+	{
+		if (channel->connected_users[i] == NULL)
+			continue;
+
+		if (channel->connected_users[i] == client)
+			return i;
+		
+	}
+	
+	goto out;
+
+out :
+
+	return -1;
+}
+

@@ -395,6 +395,9 @@ out:
 
 int chat_find_nick(struct clients *clients, const char *nick)
 {
+	if (clients == NULL || nick == NULL)
+		return -1;
+	
 	for (int i = 0; i < clients->clients_i; i++)
 		if (clients->clients[i] && strcmp(clients->clients[i]->nick, nick) == 0)
 			return i;
@@ -404,6 +407,9 @@ int chat_find_nick(struct clients *clients, const char *nick)
 
 int chat_find_channelname(struct channels *channels, const char *channelname)
 {
+	if (channelname == NULL || channels == NULL)
+		return -1;
+	
 	for (int i = 0; i < channels->nchannels; i++)
 		if (channels->channels[i] && strcmp(channels->channels[i]->channelname, channelname) == 0)
 			return i;
@@ -474,6 +480,11 @@ int chat_response_handle(struct client *client)
 	if (req.status == RPL_WELCOME) {
 		client_nick_update(req.params[0]);
 	}
+	// Todo : handle response for channel join command
+	if (req.status == RPL_TOPIC || req.status == RPL_NOTOPIC) {
+		client_channelname_update();
+	}
+	
 #endif
 
 	chat_render_line(&req, req.body, line);
@@ -482,17 +493,17 @@ int chat_response_handle(struct client *client)
 	return 0;
 }
 
-char *chat_serialize_nick(struct clients *clients, char *buf, size_t size)
+char *chat_serialize_nick(struct client **clients, int nclients, char *buf, size_t size)
 {
 	char *p;
 	buf[0] = 0;
 
 	p = buf;
-	for (int i = 0; i < clients->clients_i; i++) {
-		if (clients->clients[i] == NULL)
+	for (int i = 0; i < nclients; i++) {
+		if (clients[i] == NULL)
 			continue;
 		int j = 0;
-		while (*p = clients->clients[i]->nick[j++]) p++;
+		while (*p = clients[i]->nick[j++]) p++;
 
 		if (size - (p - buf) < CLIENT_USERNAME_MAX_LEN + 1) {
 			*p = 0;

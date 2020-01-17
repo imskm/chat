@@ -9,21 +9,28 @@
 #include "chat.h"
 #include "command.h"
 #include "str.h"
-
-#define MAX_CHANNEL_CONNECTION_ALLOWED 5
+#include "channel.h"
 
 struct text_view {
 	size_t index;
 	unsigned char buf[BUFFSIZE];
 };
 
-int cui_textview(struct text_view *textv);
+struct client_channel {
+	char  *connected_channels[MAX_CHANNEL_CONNECTION_ALLOWED];
+	char  temp_channelname[CHANNEL_NAME_MAX_LEN + 1];
+	int   nconnected_channels;
+	int   active_channel;
+};
+
+int  cui_textview(struct text_view *textv);
+int  client_channel_exist(const char *channelname);
 void client_render_cmdline(char *status_line, char *prompt, char *typed_cmd);
 
 bool is_quit = false;
 
 static struct client client = {0};
-char *conn_channels[MAX_CHANNEL_CONNECTION_ALLOWED];
+static struct client_channel channel = {0};
 
 int main(int argc, char *argv[])
 {
@@ -186,4 +193,37 @@ int client_nick_update(const char *nick)
 void client_quit_set()
 {
 	is_quit = true;
+}
+
+void client_temp_channelname_set(const char *temp_channelname)
+{
+	strcpy(channel.temp_channelname, temp_channelname);
+}
+
+int client_channelname_update(void)
+{
+	int index;
+
+	if ((index = client_channel_exist(channel.temp_channelname)) == -1) {
+		channel.connected_channels[channel.nconnected_channels++] 
+		= strdup(channel.temp_channelname);
+		channel.active_channel = channel.nconnected_channels - 1;
+	} else
+		channel.active_channel = index;
+
+	chat_info_printline(channel.connected_channels[channel.active_channel]);
+	channel.temp_channelname[0] = 0;
+	return 0;
+}
+
+int client_channel_exist(const char *channelname)
+{
+	for (int i = 0; i < channel.nconnected_channels; ++i)
+	{
+		if (channel.connected_channels[i] 
+			&& strcmp(channel.connected_channels[i], channelname) == 0)
+			return i;		
+	}
+
+	return -1;
 }

@@ -85,6 +85,13 @@ int	command_handle_join(struct request *req, const char *cmd_buf)
 		goto cleanup;
 	}
 
+#ifdef CLIENT_APP
+
+	// TODO: set temp_channelname in client.c
+	client_temp_channelname_set(strdup(parts[0]));
+
+#endif
+
 	request_param_set(req, parts[0]);
 
 	ret = 0;

@@ -188,8 +188,12 @@ int request_handle_join(struct request *req, struct collection *collection)
 			req->status = ERR_CHANNELISFULL;
 			return -1;
 		}
-		// requset is for joining channel, so add new user to channel
-		collection->channels->channels[index]->connected_users[collection->channels->channels[index]->total_connected_users++] = req->src;
+		// checking if user is already connected to the channel
+		if (channel_is_user_connected(collection->channels->channels[index], req->src) == -1) {
+			// requset is for joining channel, so add new user to channel
+			collection->channels->channels[index]->connected_users[collection->channels->channels[index]->total_connected_users++] = req->src;
+		}
+		
 		req->status = RPL_TOPIC;
 
 	} else if (collection->channels->nchannels == CHANNEL_MAX_LEN) {
@@ -243,6 +247,10 @@ int request_handle_nick(struct request *req, struct collection *collection)
 
 int request_handle_msg(struct request *req, struct collection *collection)
 {
+
+	if (req->params[0][0] == '#')
+		goto channel;
+
 	/* If recipient is missing then set proper error and return */
 	if (req->params[0] == NULL) {
 		req->status = ERR_NORECIPIENT;
@@ -266,6 +274,31 @@ int request_handle_msg(struct request *req, struct collection *collection)
 		req->status = ERR_NEEDMOREPARAMS; /* Should be Message body empty */
 		return -1;
 	}
+	req->status = 0; /* Message status code */
+
+	return 0;
+
+channel:
+
+	if (chat_validate_channelname(req->params[0]) == false) {
+		req->status = ERR_NOSUCHCHANNEL;
+		return -1;
+	}
+
+	int index = chat_find_channelname(collection->channels, req->params[0]);
+	if (index == -1) {
+		req->status = ERR_NOSUCHCHANNEL;
+		return -1;
+	}
+
+	// TODO : check if user is on channel
+	/* If empty message is given the return error and set status */
+	if (req->body == NULL) {
+		req->status = ERR_NEEDMOREPARAMS; /* Should be Message body empty */
+		return -1;
+	}
+
+
 	req->status = 0; /* Message status code */
 
 	return 0;

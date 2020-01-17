@@ -11,6 +11,7 @@ CFLAGS+=-g
 # CFLAGS+=-Wmissing-declarations -Wshadow -Wpointer-arith
 # CFLAGS+=-Wsign-compare -Isrc/
 CFLAGS+=-Wunused-variable -Wunused-function -Wshadow
+CFLAGS+=-fPIE
 
 all: server client
 
@@ -22,6 +23,7 @@ server: server.c
 
 client: client.c
 	$(CC) -c -o $(OBJSPATH)/chat.o $(SRCSPATH)/chat.c $(CFLAGS) -DCLIENT_APP
+	$(CC) -c -o $(OBJSPATH)/command.o $(SRCSPATH)/command.c $(CFLAGS) -DCLIENT_APP
 	$(CC) -o client client.c $(LIBS) $(CFLAGS) 
 
 

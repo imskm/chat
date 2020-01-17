@@ -149,11 +149,33 @@ int response_send_rpl_join(struct request *req, struct collection *col)
 
 int response_send_rpl_names(struct request *req, struct collection *col)
 {
+	int index;
 	char buf[BUFFSIZE];
 
+	// TODO: found a bug when names command is given without any arguments(channelname)
+	// it genenrates sigsegv 
+	index = chat_find_channelname(col->channels, req->params[0]);
+	if (index == -1) {
+		req->status = ERR_NOSUCHCHANNEL;
+		return -1;
+	}
+
+	struct client **clients = col->channels->channels[index]->connected_users;
+
+	for (int i = 0; i < col->channels->channels[index]->total_connected_users; i++) {
+		fprintf(stderr, "----> %s\n", clients[i]->nick);
+	}
+
 	sprintf(buf, "%d %s :", RPL_NAMREPLY, req->src->nick);
-	chat_serialize_nick(col->clients, buf + strlen(buf), sizeof(buf)
-			- strlen(buf));
+	chat_serialize_nick(
+		col->channels->channels[index]->connected_users,
+		col->channels->channels[index]->total_connected_users,
+		buf + strlen(buf),
+		sizeof(buf) - strlen(buf)
+	);
+
+
+
 
 	/* TODO Handle the case when buf is full but more nick is remaining */
 
