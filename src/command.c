@@ -286,8 +286,7 @@ int command_message_get_index()
 	/* First char of start is not '/' (forward slash) then command is msg */
 	if (msg_index == -1) {
 		msg_index = find_message_cmd_index();
-		return msg_index;
 	}
 
-	return -1;
+	return msg_index;
 }
