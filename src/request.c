@@ -5,6 +5,9 @@
 
 #include "chat.h"
 
+static int request_handle_msg_channel(struct request *req, struct collection *collection);
+static int request_handle_msg_client(struct request *req, struct collection *collection);
+
 void request_dump(struct request *req)
 {
 	fprintf(stderr, "Origin : %s\n", req->orig);
@@ -244,13 +247,42 @@ int request_handle_nick(struct request *req, struct collection *collection)
 	return 0;
 }
 
-
-int request_handle_msg(struct request *req, struct collection *collection)
+int request_handle_msg_channel(struct request *req, struct collection *collection)
 {
+	int index;
 
-	if (req->params[0][0] == '#')
-		goto channel;
+	if (chat_validate_channelname(req->params[0]) == false) {
+		req->status = ERR_NOSUCHCHANNEL;
+		return -1;
+	}
 
+	index = chat_find_channelname(collection->channels, req->params[0]);
+	if (index == -1) {
+		req->status = ERR_NOSUCHCHANNEL;
+		return -1;
+	}
+
+	// Check if user is on channel
+
+	if((channel_is_user_connected(collection->channels->channels[index], req->src)) == -1) {
+		// req->status = ;
+		return -1;
+	}
+
+	/* If empty message is given the return error and set status */
+	if (req->body == NULL) {
+		req->status = ERR_NEEDMOREPARAMS; /* Should be Message body empty */
+		return -1;
+	}
+
+
+	req->status = 0; /* Message status code */
+
+	return 0;
+}
+
+int request_handle_msg_client(struct request *req, struct collection *collection)
+{
 	/* If recipient is missing then set proper error and return */
 	if (req->params[0] == NULL) {
 		req->status = ERR_NORECIPIENT;
@@ -277,29 +309,15 @@ int request_handle_msg(struct request *req, struct collection *collection)
 	req->status = 0; /* Message status code */
 
 	return 0;
+}
 
-channel:
+int request_handle_msg(struct request *req, struct collection *collection)
+{
 
-	if (chat_validate_channelname(req->params[0]) == false) {
-		req->status = ERR_NOSUCHCHANNEL;
-		return -1;
-	}
-
-	int index = chat_find_channelname(collection->channels, req->params[0]);
-	if (index == -1) {
-		req->status = ERR_NOSUCHCHANNEL;
-		return -1;
-	}
-
-	// TODO : check if user is on channel
-	/* If empty message is given the return error and set status */
-	if (req->body == NULL) {
-		req->status = ERR_NEEDMOREPARAMS; /* Should be Message body empty */
-		return -1;
-	}
-
-
-	req->status = 0; /* Message status code */
+	if (req->params[0][0] == '#')
+		request_handle_msg_channel(req, collection);
+	else 
+		request_handle_msg_client(req, collection);
 
 	return 0;
 }

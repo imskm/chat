@@ -69,6 +69,7 @@ int		client_request_assoc(struct client *client, char *errors,
 int 	client_get_command_type(const char *cmd);
 int		client_send_message(struct client *client, const char *msg);
 void    client_temp_channelname_set(const char *temp_channelname);
+char    *client_active_channel();
 void	client_quit_set();
 
 /**

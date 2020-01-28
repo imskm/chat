@@ -32,6 +32,7 @@ bool is_quit = false;
 static struct client client = {0};
 static struct client_channel channel = {0};
 
+
 int main(int argc, char *argv[])
 {
 	int sockfd;
@@ -43,6 +44,8 @@ int main(int argc, char *argv[])
 
 	int maxfd, nready;
 	fd_set rset, allset;
+
+	channel.active_channel = -1;
 
 
 	sockfd = Socket(AF_INET, SOCK_STREAM, 0);
@@ -226,4 +229,12 @@ int client_channel_exist(const char *channelname)
 	}
 
 	return -1;
+}
+
+char *client_active_channel()
+{
+	if (channel.active_channel == -1)
+		return NULL;
+	
+	return channel.connected_channels[channel.active_channel];
 }

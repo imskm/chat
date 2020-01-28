@@ -7,6 +7,9 @@
 static void prepare_error_message(struct request *req,
 		const struct response *res, struct collection *col);
 
+static int response_send_msg_channel(struct request *req, struct collection *col);
+static int response_send_msg_client(struct request *req, struct collection *col);
+
 
 int response_send(int sockfd, const char *buf, size_t size)
 {
@@ -76,14 +79,40 @@ void prepare_error_message(struct request *req, const struct response *res,
 	/* TODO test for other variables and replace accordingly */
 }
 
-int response_send_msg(struct request *req, struct collection *col)
+int response_send_msg_channel(struct request *req, struct collection *col)
 {
-	int i;
-	struct client *client;
-	struct client *recipient;
+	int index, buf_size;
+	struct channel *channel;
 	unsigned char buf[BUFFSIZE];
 
-	client = col->clients->clients[col->index];
+	index = chat_find_channelname(col->channels, req->params[0]);
+	channel = col->channels->channels[index];
+
+	/* Send the message to recipients */
+	sprintf(buf, ":%s %s %s :%s", req->src->nick, req->irc_cmd, req->params[0],
+				req->body);
+
+	buf_size = strlen(buf);
+	for (int i = 0; i < channel->total_connected_users; ++i)
+	{
+		if (channel->connected_users[i] == NULL)
+			continue;
+
+		if (channel->connected_users[i] == req->src)
+			continue;
+		
+		// Todo : log error msg if response_send() returns -1
+		response_send(channel->connected_users[i]->fd, buf, buf_size);
+	}
+
+	return 0;
+}
+
+int response_send_msg_client(struct request *req, struct collection *col)
+{
+	int i;
+	struct client *recipient;
+	unsigned char buf[BUFFSIZE];
 
 	/* Find recipient */
 	i = chat_find_nick(col->clients, req->params[0]);
@@ -92,7 +121,19 @@ int response_send_msg(struct request *req, struct collection *col)
 	/* Send the message to recipient */
 	sprintf(buf, ":%s %s %s :%s", req->src->nick, req->irc_cmd, req->params[0],
 			req->body);
-	i = response_send(recipient->fd, buf, strlen(buf));
+	return response_send(recipient->fd, buf, strlen(buf));
+}
+
+int response_send_msg(struct request *req, struct collection *col)
+{
+	int i;
+	unsigned char buf[BUFFSIZE];
+
+	if (req->params[0][0] == '#')
+		response_send_msg_channel(req, col);
+
+	else 
+		response_send_msg_client(req, col);
 
 	/* Send the same message to the sender */
 	sprintf(buf, ":%s %s %s :%s", req->src->nick, req->irc_cmd, req->src->nick,
