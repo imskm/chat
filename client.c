@@ -24,7 +24,6 @@ struct client_channel {
 };
 
 int  cui_textview(struct text_view *textv);
-int  client_channel_exist(const char *channelname);
 void client_render_cmdline(char *status_line, char *prompt, char *typed_cmd);
 
 bool is_quit = false;

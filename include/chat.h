@@ -9,6 +9,7 @@
 #define PEER_TERMINATED 0x10
 
 #define CLIENT_QUIT   -001
+#define PART_LEAVE    -002
 
 #define CLIENT_USERNAME_MAX_LEN         9
 #define COMMAND_MSG_BUF_MAX_LEN         512
@@ -19,7 +20,7 @@
 
 #define REQTYPE_MSG 1
 #define REQTYPE_ERR 2
-#define REQTYPE_RPL 2
+#define REQTYPE_RPL 3
 
 struct client {
 	int fd;
@@ -68,6 +69,7 @@ int		client_request_assoc(struct client *client, char *errors,
 		const char *username);
 int 	client_get_command_type(const char *cmd);
 int		client_send_message(struct client *client, const char *msg);
+int     client_channel_exist(const char *channelname);
 void    client_temp_channelname_set(const char *temp_channelname);
 char    *client_active_channel();
 void	client_quit_set();

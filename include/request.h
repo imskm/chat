@@ -32,5 +32,6 @@ int request_handle_msg(struct request *req, struct collection *collection);
 int request_handle_names(struct request *req, struct collection *collection);
 int request_handle_nick(struct request *req, struct collection *collection);
 int request_handle_quit(struct request *req, struct collection *collection);
+int request_handle_part(struct request *req, struct collection *collection);
 
 #endif

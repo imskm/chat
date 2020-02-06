@@ -42,6 +42,7 @@ int  channel_key_set(struct channel *channel, const char *key);
 void channel_dump(struct channel *channel);
 int  channel_is_user_connected(struct channel *channel, struct client *client);
 
+int  channel_user_remove(struct request *req, struct collection *collection);
 
 
 

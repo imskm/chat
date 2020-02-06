@@ -60,3 +60,18 @@ out :
 	return -1;
 }
 
+int  channel_user_remove(struct request *req, struct collection *col)
+{
+	int index, i;
+
+	index = chat_find_channelname(col->channels, req->params[0]);
+
+	i = channel_is_user_connected(col->channels->channels[index], req->src);
+
+	if (i == -1) 
+		return -1;
+
+	col->channels->channels[index]->connected_users[i] = NULL;
+
+	return 0;
+}

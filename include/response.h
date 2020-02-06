@@ -27,6 +27,7 @@ int response_send_rpl_join(struct request *req, struct collection *col);
 int response_send_rpl_names(struct request *req, struct collection *col);
 int response_send_rpl_nick(struct request *req, struct collection *col);
 int response_send_rpl_quit(struct request *req, struct collection *col);
+int response_send_rpl_part(struct request *req, struct collection *col);
 
 
 #endif

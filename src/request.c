@@ -337,3 +337,14 @@ int request_handle_quit(struct request *req, struct collection *collection)
 	return 0;
 }
 
+int request_handle_part(struct request *req, struct collection *collection)
+{
+	// Todo: Validation
+	req->status = PART_LEAVE;
+
+	if (channel_user_remove(req, collection) == -1)
+		return -1;
+
+	
+	return 0;
+}

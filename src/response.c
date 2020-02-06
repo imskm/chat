@@ -204,6 +204,8 @@ int response_send_rpl_names(struct request *req, struct collection *col)
 	struct client **clients = col->channels->channels[index]->connected_users;
 
 	for (int i = 0; i < col->channels->channels[index]->total_connected_users; i++) {
+		if (clients[i] == NULL)
+			continue;
 		fprintf(stderr, "----> %s\n", clients[i]->nick);
 	}
 
@@ -241,4 +243,14 @@ int response_send_rpl_quit(struct request *req, struct collection *col)
 	return 0;
 }
 
+int response_send_rpl_part(struct request *req, struct collection *col)
+{
+	// Todo: broadcast the leave message to the channel
+	
+	char msg[BUFFSIZE];
+	sprintf(msg, "User %s has left the channel", req->src->nick);
+	req->body = strdup(msg);
+
+	return response_send_msg_channel(req, col);
+}
 

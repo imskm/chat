@@ -262,6 +262,11 @@ int chat_request_handle(struct collection *collection, fd_set *set)
 		return chat_client_session_close(clients, index);
 	}
 
+	/* If request is for part then handle it here */
+	if (req.status == PART_LEAVE) {
+		return response_send_rpl_part(&req, collection);
+	}
+
 	/* 3. Response send */
 	/* If request is for sending reply to request sender */
 	if (chat_get_request_type(req.status) == REQTYPE_RPL) {
