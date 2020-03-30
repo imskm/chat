@@ -118,21 +118,39 @@ int	chat_request_send(struct client *client, struct request *req)
 	return 0;
 }
 
+// Todo : channel message handling
 static int prepare_request_for_message(struct request *req,
 		const char *cmd_bufp)
 {
-	 /* @TODO implement message handling if user tries to send message 
+	 /* message handling if user tries to send message 
 	  * without using '/msg' command */
-	return 0;
+	
+	char *target_channel;
+	char *tmp = strdup(cmd_bufp);
 
 	/* If user is not associated with other user then he/she
 	 * can not send message without using /msg command */
-	/* TODO check for associated channel. I am no longer allowing user to
+	/* check for associated channel. I am no longer allowing user to
 	 * associate with other user, instead allowing user to associate with
 	 * channel */
 
+	#ifdef CLIENT_APP
+
+	target_channel = client_active_channel();
+
+	#endif
+
+	if (target_channel == NULL)
+		return -1;
+
 	req->irc_cmd = commands[command_message_get_index()].irc_cmd;
-	req->body = strdup(cmd_bufp);
+	req->cmd = commands[command_message_get_index()].cmd;
+	request_param_set(req, target_channel);
+	request_body_set(req, tmp);
+	// request_dump(req);
+
+	free(tmp);
+
 	return 0;
 }
 
@@ -242,6 +260,11 @@ int chat_request_handle(struct collection *collection, fd_set *set)
 		}
 		response_send_rpl_quit(&req, collection);
 		return chat_client_session_close(clients, index);
+	}
+
+	/* If request is for part then handle it here */
+	if (req.status == PART_LEAVE) {
+		return response_send_rpl_part(&req, collection);
 	}
 
 	/* 3. Response send */
@@ -395,6 +418,9 @@ out:
 
 int chat_find_nick(struct clients *clients, const char *nick)
 {
+	if (clients == NULL || nick == NULL)
+		return -1;
+	
 	for (int i = 0; i < clients->clients_i; i++)
 		if (clients->clients[i] && strcmp(clients->clients[i]->nick, nick) == 0)
 			return i;
@@ -404,6 +430,9 @@ int chat_find_nick(struct clients *clients, const char *nick)
 
 int chat_find_channelname(struct channels *channels, const char *channelname)
 {
+	if (channelname == NULL || channels == NULL)
+		return -1;
+	
 	for (int i = 0; i < channels->nchannels; i++)
 		if (channels->channels[i] && strcmp(channels->channels[i]->channelname, channelname) == 0)
 			return i;
@@ -474,6 +503,11 @@ int chat_response_handle(struct client *client)
 	if (req.status == RPL_WELCOME) {
 		client_nick_update(req.params[0]);
 	}
+	// Todo : handle response for channel join command
+	if (req.status == RPL_TOPIC || req.status == RPL_NOTOPIC) {
+		client_channelname_update();
+	}
+	
 #endif
 
 	chat_render_line(&req, req.body, line);
@@ -482,17 +516,17 @@ int chat_response_handle(struct client *client)
 	return 0;
 }
 
-char *chat_serialize_nick(struct clients *clients, char *buf, size_t size)
+char *chat_serialize_nick(struct client **clients, int nclients, char *buf, size_t size)
 {
 	char *p;
 	buf[0] = 0;
 
 	p = buf;
-	for (int i = 0; i < clients->clients_i; i++) {
-		if (clients->clients[i] == NULL)
+	for (int i = 0; i < nclients; i++) {
+		if (clients[i] == NULL)
 			continue;
 		int j = 0;
-		while (*p = clients->clients[i]->nick[j++]) p++;
+		while (*p = clients[i]->nick[j++]) p++;
 
 		if (size - (p - buf) < CLIENT_USERNAME_MAX_LEN + 1) {
 			*p = 0;

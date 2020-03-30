@@ -203,7 +203,7 @@ const struct response responses[] = {
 	{401, "<nick> :No such nick/channel",                    response_send_err},
 	{402, NULL, NULL},
 	{403, "<channel> :No such channel",                      response_send_err},
-	{404, NULL, NULL},
+	{404, "<channel name> :Cannot send to channel",          response_send_err},
 	{405, NULL, NULL},
 	{406, NULL, NULL},
 	{407, NULL, NULL},

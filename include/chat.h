@@ -6,20 +6,21 @@
 #include <str.h>
 
 
-
 #define PEER_TERMINATED 0x10
 
 #define CLIENT_QUIT   -001
+#define PART_LEAVE    -002
 
-#define CLIENT_USERNAME_MAX_LEN 9
-#define COMMAND_MSG_BUF_MAX_LEN 512
+#define CLIENT_USERNAME_MAX_LEN         9
+#define COMMAND_MSG_BUF_MAX_LEN         512
+#define MAX_CHANNEL_CONNECTION_ALLOWED  5
 
 #define IRC_MIN_REPLY_CODE 200
 #define IRC_MAX_REPLY_CODE 502
 
 #define REQTYPE_MSG 1
 #define REQTYPE_ERR 2
-#define REQTYPE_RPL 2
+#define REQTYPE_RPL 3
 
 struct client {
 	int fd;
@@ -57,6 +58,7 @@ int		server_new_client(struct clients *clients, int sockfd);
 int		server_del_client(struct clients *clients, int index);
 
 int 	client_nick_update(const char *nick);
+int     client_channelname_update(void);
 int 	client_handle_command(struct client *client);
 int 	client_handle_response(struct client *client);
 int 	client_username_check(int sockfd, const char *username);
@@ -67,6 +69,9 @@ int		client_request_assoc(struct client *client, char *errors,
 		const char *username);
 int 	client_get_command_type(const char *cmd);
 int		client_send_message(struct client *client, const char *msg);
+int     client_channel_exist(const char *channelname);
+void    client_temp_channelname_set(const char *temp_channelname);
+char    *client_active_channel();
 void	client_quit_set();
 
 /**
@@ -100,7 +105,7 @@ bool 	chat_validate_nick(const char *nick);
 bool    chat_validate_channelname(const char *channelname);
 int		chat_find_nick(struct clients *clients, const char *nick);
 int		chat_find_channelname(struct channels *channels, const char *channelname);
-char	*chat_serialize_nick(struct clients *clients, char *buf, size_t size);
+char	*chat_serialize_nick(struct client **clients, int nclients, char *buf, size_t size);
 
 int 	chat_render_line(struct request *req, const char *buf, unsigned char *line);
 int 	chat_calc_reply_index(int status);

@@ -24,6 +24,7 @@ int		command_handle_msg(struct request *req, const char *cmd_buf);
 int		command_handle_names(struct request *req, const char *cmd_buf);
 int		command_handle_nick(struct request *req, const char *cmd_buf);
 int		command_handle_quit(struct request *req, const char *cmd_buf);
+int	    command_handle_part(struct request *req, const char *cmd_buf);
 
 int 	command_message_get_index();
 

@@ -15,6 +15,7 @@ const struct command commands[] = {
 	{"names",   "NAMES",    command_handle_names,   request_handle_names},
 	{"nick",    "NICK",     command_handle_nick,    request_handle_nick},
 	{"quit",    "QUIT",     command_handle_quit,    request_handle_quit},
+	{"part",    "PART",     command_handle_part,    request_handle_part},
 	{NULL,		NULL,      	NULL,       			NULL},
 };
 
@@ -84,6 +85,13 @@ int	command_handle_join(struct request *req, const char *cmd_buf)
 		ret = -1;
 		goto cleanup;
 	}
+
+#ifdef CLIENT_APP
+
+	// TODO: set temp_channelname in client.c
+	client_temp_channelname_set(strdup(parts[0]));
+
+#endif
 
 	request_param_set(req, parts[0]);
 
@@ -224,6 +232,55 @@ int	command_handle_quit(struct request *req, const char *cmd_buf)
 	return ret;
 }
 
+int	command_handle_part(struct request *req, const char *cmd_buf)
+{
+	int argc, ret = 0;
+	char *cmd_cp, *cmd_cpp, *parts[2] = {0};
+
+	if ((cmd_cp = strdup(cmd_buf)) == NULL) {
+		fprintf(stderr, "[!] command error\n");
+		return -1;
+	}
+
+	str_ltrim(cmd_cp);
+	cmd_cpp = cmd_cp; /* need to free it after sending request */
+
+	if ((argc = extract_fill_params(&cmd_cpp, parts, 2)) != 1) {
+		chat_info_printline("Invalid join command");
+		ret = -1;
+		goto cleanup;
+	}
+
+	// Validate channel name
+	if (!chat_validate_channelname(parts[0])) {
+		chat_info_printline("Invalid channel name");
+		ret = -1;
+		goto cleanup;
+	}
+
+#ifdef CLIENT_APP
+
+	// check is user is joined to the channel
+	if (client_channel_exist(parts[0]) == -1) {
+		chat_info_printline("You are not joined to this channel");
+		ret = -1;
+		goto cleanup;	
+	}
+
+#endif
+
+	request_param_set(req, parts[0]);
+
+	ret = 0;
+
+cleanup:
+	free(cmd_cp);
+	if (parts[0]) free(parts[0]);
+
+	return ret;
+}
+
+
 static int find_message_cmd_index()
 {
 	for (int i = 0; commands[i].cmd != NULL; i++) 
@@ -279,8 +336,7 @@ int command_message_get_index()
 	/* First char of start is not '/' (forward slash) then command is msg */
 	if (msg_index == -1) {
 		msg_index = find_message_cmd_index();
-		return msg_index;
 	}
 
-	return -1;
+	return msg_index;
 }
