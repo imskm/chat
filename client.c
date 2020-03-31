@@ -44,6 +44,13 @@ int main(int argc, char *argv[])
 	int maxfd, nready;
 	fd_set rset, allset;
 
+	/* If user has supplied arg but the wrong way then show help message
+	 * and abort */
+	if (argc > 1 && argc != 3) {
+		fprintf(stderr, "Usage: %s <server_ip> <server_port>\n", argv[0]);
+		exit(-1);
+	}
+
 	channel.active_channel = -1;
 
 
@@ -51,8 +58,15 @@ int main(int argc, char *argv[])
 
 	memset(&serveraddr, 0, sizeof(serveraddr));
 	serveraddr.sin_family = AF_INET;
-	serveraddr.sin_port = htons(SERVER_PORT);
-	Inet_pton(AF_INET, SERVER_IP, &serveraddr.sin_addr);
+
+	/* if server ip and port is providen in argument then use that */
+	if (argc == 3) {
+		serveraddr.sin_port = htons((short) atoi(argv[2]));
+		Inet_pton(AF_INET, argv[1], &serveraddr.sin_addr);
+	} else {
+		serveraddr.sin_port = htons(SERVER_PORT);
+		Inet_pton(AF_INET, SERVER_IP, &serveraddr.sin_addr);
+	}
 
 	Connect(sockfd, (struct sockaddr *) &serveraddr, sizeof(struct sockaddr));
 
