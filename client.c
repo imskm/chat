@@ -53,7 +53,6 @@ int main(int argc, char *argv[])
 	serveraddr.sin_family = AF_INET;
 	serveraddr.sin_port = htons(SERVER_PORT);
 	Inet_pton(AF_INET, SERVER_IP, &serveraddr.sin_addr);
-	serveraddr.sin_addr.s_addr = htonl(INADDR_ANY);
 
 	Connect(sockfd, (struct sockaddr *) &serveraddr, sizeof(struct sockaddr));
 
