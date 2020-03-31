@@ -27,14 +27,14 @@ void channel_dump(struct channel *channel)
 {
 	fprintf(stderr, "Channel Name  : %s\n", channel->channelname);
 	fprintf(stderr, "Channel Topic : %s\n", channel->topic);
-	fprintf(stderr, "Users :\n", channel->topic);
+	fprintf(stderr, "Users :%s\n", channel->topic);
 
 	for (int i = 0; i < channel->total_connected_users; ++i)
 	{
 		if (channel->connected_users[i] == NULL)
 			continue;
 
-		fprintf(stderr, "          %s\n", channel->connected_users[i]);
+		fprintf(stderr, "          %s\n", channel->connected_users[i]->nick);
 	}
 }
 
